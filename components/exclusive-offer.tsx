@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 
@@ -16,32 +16,32 @@ const reviews = [
   {
     id: 1,
     name: "Khadija",
-    text: "Dressify has completely transformed how I approach my wardrobe. The personalized suggestions are spot on, and the entire experience is so intuitive. It’s like having a styling pal in my pocket!",
+    text: "Dressify has completely transformed how I approach my wardrobe...",
   },
   {
     id: 2,
     name: "Sarah",
-    text: "I’ve never felt more confident in my fashion choices since using Dressify. The AI recommendations help me pick new looks that I never thought I’d try. The platform has enabled me to expand my wardrobe in ways I absolutely love.",
+    text: "I’ve never felt more confident in my fashion choices since using Dressify...",
   },
   {
     id: 3,
     name: "Romaisa",
-    text: "The ease of managing my digital wardrobe on Dressify is amazing. The quick access to my wardrobe allows me to decide faster how I’d like to mix and match, elevating my daily style game.",
+    text: "The ease of managing my digital wardrobe on Dressify is amazing...",
   },
   {
     id: 4,
     name: "Ali",
-    text: "Dressify's suggestions are unbelievably accurate. It's like it knows my style better than I do. I love how the app streamlines my morning routine.",
+    text: "Dressify's suggestions are unbelievably accurate...",
   },
   {
     id: 5,
     name: "Aisha",
-    text: "I used to waste so much time figuring out what to wear. Now with Dressify, I have curated outfits ready for any occasion in seconds.",
+    text: "I used to waste so much time figuring out what to wear...",
   },
   {
     id: 6,
     name: "Zara",
-    text: "Shopping has never been easier. Dressify not only helps me find new outfits but also organizes my closet, so I never lose track of my favorite pieces.",
+    text: "Shopping has never been easier. Dressify not only helps me find new outfits...",
   },
 ];
 
@@ -49,9 +49,11 @@ const reviews = [
 const repeatedReviews = [...reviews, ...reviews];
 
 const ExclusiveOfferSection: React.FC = () => {
-  // ======= COUNTDOWN TIMER LOGIC =======
-  // Set your target date/time here:
-  const targetDate = new Date("2025-12-31T23:59:59").getTime();
+  // Memoize the target date so it remains constant between renders.
+  const targetDate = useMemo(
+    () => new Date("2025-12-31T23:59:59").getTime(),
+    []
+  );
 
   const [timeLeft, setTimeLeft] = useState<TimeLeft>({
     days: 0,
@@ -60,36 +62,33 @@ const ExclusiveOfferSection: React.FC = () => {
     seconds: 0,
   });
 
-  // Function to calculate time difference
-  const calculateTimeLeft = () => {
-    const now = new Date().getTime();
-    const difference = targetDate - now;
-
-    if (difference <= 0) {
-      // If the date has passed or is now, set everything to 0
-      return { days: 0, hours: 0, minutes: 0, seconds: 0 };
-    } else {
-      const days = Math.floor(difference / (1000 * 60 * 60 * 24));
-      const hours = Math.floor(
-        (difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
-      );
-      const minutes = Math.floor(
-        (difference % (1000 * 60 * 60)) / (1000 * 60)
-      );
-      const seconds = Math.floor((difference % (1000 * 60)) / 1000);
-
-      return { days, hours, minutes, seconds };
-    }
-  };
-
   useEffect(() => {
+    function calcTimeLeft() {
+      const now = new Date().getTime();
+      const difference = targetDate - now;
+
+      if (difference <= 0) {
+        return { days: 0, hours: 0, minutes: 0, seconds: 0 };
+      } else {
+        const days = Math.floor(difference / (1000 * 60 * 60 * 24));
+        const hours = Math.floor(
+          (difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
+        );
+        const minutes = Math.floor(
+          (difference % (1000 * 60 * 60)) / (1000 * 60)
+        );
+        const seconds = Math.floor((difference % (1000 * 60)) / 1000);
+
+        return { days, hours, minutes, seconds };
+      }
+    }
+
     const timer = setInterval(() => {
-      setTimeLeft(calculateTimeLeft());
+      setTimeLeft(calcTimeLeft());
     }, 1000);
 
-    // Cleanup on unmount
     return () => clearInterval(timer);
-  }, []);
+  }, [targetDate]); // targetDate is now stable
 
   return (
     <main className="w-full">
@@ -205,10 +204,9 @@ const ExclusiveOfferSection: React.FC = () => {
           </motion.h2>
 
           <div className="relative w-full overflow-hidden">
-            {/* Continuous marquee animation */}
             <motion.div
               className="flex space-x-6"
-              animate={{ x: ["0%", "-50%"] }} // Scroll half the total width if we doubled the array
+              animate={{ x: ["0%", "-50%"] }}
               transition={{
                 repeat: Infinity,
                 duration: 30,
@@ -217,7 +215,7 @@ const ExclusiveOfferSection: React.FC = () => {
             >
               {repeatedReviews.map((review) => (
                 <div
-                  key={review.id + Math.random()} // ensure unique key for duplicates
+                  key={review.id + Math.random()}
                   className="min-w-[300px] max-w-[300px] bg-[#F9FAFB] p-6 rounded-md shadow-md flex-shrink-0"
                 >
                   <p className="text-gray-700 italic mb-3">“{review.text}”</p>

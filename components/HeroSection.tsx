@@ -53,7 +53,7 @@ const HeroSection: React.FC = () => {
             alt="Model wearing a pastel dress"
             width={450}
             height={500}
-            objectFit="cover"
+            style={{ objectFit: "cover" }}
             priority
           />
         </motion.div>
