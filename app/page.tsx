@@ -4,6 +4,10 @@ import { NextPage } from 'next';
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import HeroSection from "@/components/HeroSection";
+import InfoSection from "@/components/InfoSection";
+import TrendingSection from "@/components/TrendingSection";
+import ExclusiveOfferPage from "@/components/exclusive-offer";
+import FooterSection from "@/components/FooterSection";
 
 const LandingPage: NextPage = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -125,6 +129,10 @@ const LandingPage: NextPage = () => {
 
       {/* Landing Page Sections */}
       <HeroSection />
+      <InfoSection />
+      <TrendingSection />
+      <ExclusiveOfferPage />
+      <FooterSection />
       {/* Add more sections here as needed */}
     </div>
   );
