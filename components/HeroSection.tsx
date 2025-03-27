@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 
 const HeroSection: React.FC = () => {
   return (
-    <section className="container mx-auto flex flex-col-reverse md:flex-row items-center mt-10 px-4 md:px-0 gap-8">
+    <section className="container mx-auto flex flex-col-reverse md:flex-row items-center mt-10 mb-10 px-4 md:px-0 gap-8">
       {/* Left Text Content */}
       <motion.div
         className="w-full md:w-1/2 text-center md:text-left"
