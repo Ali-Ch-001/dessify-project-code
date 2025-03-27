@@ -8,9 +8,9 @@ import HeroSection from "@/components/HeroSection";
 const LandingPage: NextPage = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  // Animation variants for the navbar
+  // Animation variants for the navbar (subtle slide from top)
   const navVariants = {
-    hidden: { opacity: 0, y: -20 },
+    hidden: { opacity: 0, y: -10 },
     visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
   };
 
@@ -20,47 +20,75 @@ const LandingPage: NextPage = () => {
     visible: { opacity: 1, height: "auto", transition: { duration: 0.3 } },
   };
 
+  // Array of navigation links for reuse
+  const navLinks = ["Home", "Trial", "Shop", "Contact"];
+
   return (
     <div className="bg-[#A9BAEF] min-h-screen text-[#29224F]">
-      {/* NAVIGATION BAR */}
+      {/* Navigation Bar */}
       <motion.nav
         className="container mx-auto flex items-center justify-between py-4 px-4 md:px-0"
         initial="hidden"
         animate="visible"
         variants={navVariants}
       >
-        <div className="text-2xl font-bold">
+        {/* Logo */}
+        <motion.div
+          className="text-3xl font-bold"
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+        >
           Dressify
-        </div>
-        {/* Desktop Nav Links */}
+        </motion.div>
+
+        {/* Desktop Navigation Links */}
         <div className="hidden md:flex space-x-8">
-          <a href="#" className="hover:text-[#29224F] transition-colors">Home</a>
-          <a href="#" className="hover:text-[#29224F] transition-colors">Trial</a>
-          <a href="#" className="hover:text-[#29224F] transition-colors">Shop</a>
-          <a href="#" className="hover:text-[#29224F] transition-colors">Contact</a>
+          {navLinks.map((link, index) => (
+            <motion.a
+              key={link}
+              href="#"
+              className="text-lg hover:text-[#29224F] transition-colors"
+              whileHover={{ scale: 1.05 }}
+              transition={{ delay: index * 0.05 }}
+            >
+              {link}
+            </motion.a>
+          ))}
         </div>
+
+        {/* Right Section: Desktop Login & Mobile Hamburger */}
         <div className="flex items-center">
           {/* Desktop Login Button */}
-          <button
-            className="bg-[#29224F] text-white px-5 py-2 rounded-md hover:bg-gray-800 transition-colors hidden md:block"
+          <motion.button
+            className="bg-[#29224F] text-white px-5 py-2 rounded-md hover:bg-gray-800 transition-colors hidden md:block text-lg"
             type="button"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
           >
             Login
-          </button>
+          </motion.button>
+
           {/* Mobile Hamburger Button */}
-          <button
+          <motion.button
             className="md:hidden ml-2"
             onClick={() => setIsMobileMenuOpen((prev) => !prev)}
             type="button"
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M4 6h16M4 12h16M4 18h16"
+              />
             </svg>
-          </button>
+          </motion.button>
         </div>
       </motion.nav>
 
-      {/* Mobile Nav Menu */}
+      {/* Mobile Navigation Menu */}
       <AnimatePresence>
         {isMobileMenuOpen && (
           <motion.div
@@ -71,16 +99,25 @@ const LandingPage: NextPage = () => {
             variants={mobileMenuVariants}
           >
             <div className="flex flex-col space-y-2 py-2">
-              <a href="#" className="block hover:text-[#29224F] transition-colors">Home</a>
-              <a href="#" className="block hover:text-[#29224F] transition-colors">Trial</a>
-              <a href="#" className="block hover:text-[#29224F] transition-colors">Shop</a>
-              <a href="#" className="block hover:text-[#29224F] transition-colors">Contact</a>
-              <a
+              {navLinks.map((link, index) => (
+                <motion.a
+                  key={link}
+                  href="#"
+                  className="block text-lg hover:text-[#29224F] transition-colors"
+                  whileHover={{ scale: 1.05 }}
+                  transition={{ delay: index * 0.05 }}
+                >
+                  {link}
+                </motion.a>
+              ))}
+              <motion.a
                 href="#"
-                className="block bg-[#29224F] text-white px-5 py-2 rounded-md text-center hover:bg-gray-800 transition-colors"
+                className="block bg-[#29224F] text-white px-5 py-2 rounded-md text-center hover:bg-gray-800 transition-colors text-lg"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
               >
                 Login
-              </a>
+              </motion.a>
             </div>
           </motion.div>
         )}
