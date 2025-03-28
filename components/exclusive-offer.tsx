@@ -104,7 +104,7 @@ const ExclusiveOfferSection: React.FC = () => {
             transition={{ duration: 0.7 }}
           >
             <Image
-              src="/img/offermodel.png" // Replace with your actual image
+              src="/landing_img/offermodel.png" // Replace with your actual image
               alt="Model with green blazer"
               width={400}
               height={500}

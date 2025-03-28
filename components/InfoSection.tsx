@@ -170,7 +170,7 @@ const InfoSection: React.FC = () => {
           {/* Model 1 */}
           <div className="flex flex-col items-center">
             <Image
-              src="/img/model1.png"
+              src="/landing_img/model1.png"
               alt="Model 1"
               width={300}
               height={400}
@@ -190,7 +190,7 @@ const InfoSection: React.FC = () => {
           {/* Model 2 */}
           <div className="flex flex-col items-center">
             <Image
-              src="/img/model2.png"
+              src="/landing_img/model2.png"
               alt="Model 2"
               width={300}
               height={400}
@@ -210,7 +210,7 @@ const InfoSection: React.FC = () => {
           {/* Model 3 */}
           <div className="flex flex-col items-center">
             <Image
-              src="/img/model3.png"
+              src="/landing_img/model3.png"
               alt="Model 3"
               width={300}
               height={400}

@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 
 const HeroSection: React.FC = () => {
   return (
-    <section className="container mx-auto flex flex-col-reverse md:flex-row items-center mt-10 mb-10 px-4 md:px-0 gap-8">
+    <section className="container mx-auto flex flex-col-reverse md:flex-row items-center px-4 md:px-0 gap-8 min-h-screen">
       {/* Left Text Content */}
       <motion.div
         className="w-full md:w-1/2 text-center md:text-left"
@@ -14,7 +14,7 @@ const HeroSection: React.FC = () => {
         transition={{ duration: 0.7 }}
       >
         <motion.h1
-          className="text-7xl md:text-7xl font-bold leading-tight mb-4"
+          className="text-7xl font-bold leading-tight mb-4"
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.3, duration: 0.7 }}
@@ -49,7 +49,7 @@ const HeroSection: React.FC = () => {
           whileTap={{ scale: 0.97 }}
         >
           <Image
-            src="/img/landing1.png"  // Path from public folder
+            src="/landing_img/landing1.png"  // Path from public folder
             alt="Model wearing a pastel dress"
             width={450}
             height={500}
