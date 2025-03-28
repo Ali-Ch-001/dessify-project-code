@@ -1,14 +1,11 @@
 "use client";
-
 import React from "react";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
-
-// OPTIONAL: If you want icons, install react-icons:
-// npm install react-icons
 import { FiMail, FiLock } from "react-icons/fi";
+import { motion } from "framer-motion";
 
 // Zod schema for login
 const loginSchema = z.object({
@@ -29,28 +26,33 @@ const LoginForm: React.FC = () => {
 
   const onSubmit: SubmitHandler<LoginFormData> = (data) => {
     console.log("Login Data:", data);
-    // TODO: Add production-level logic (API calls, etc.)
+    // TODO: Add production-level logic (e.g., API calls, redirects)
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+    <motion.form
+      onSubmit={handleSubmit(onSubmit)}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      className="space-y-6"
+    >
       {/* Email Field */}
       <div>
-        <label className="block text-[#555555] mb-1 font-medium text-base">
+        <label className="block text-black mb-1 font-medium text-base">
           Email Id
         </label>
         <div className="relative">
-          {/* Optional icon on the left */}
           <span className="absolute inset-y-0 left-3 flex items-center text-gray-400">
             <FiMail />
           </span>
           <input
             type="email"
-            placeholder="info@proavistatechnologies.com"
+            placeholder="Enter Your Email"
             {...register("email")}
             className="w-full pl-10 pr-3 py-2 border border-[#E4E7FF] rounded-md 
                        focus:outline-none focus:ring-2 focus:ring-[#29224F] 
-                       placeholder-gray-500"
+                       placeholder:text-[#000000] text-black"
           />
           {errors.email && (
             <p className="text-red-600 text-sm mt-1">{errors.email.message}</p>
@@ -60,26 +62,23 @@ const LoginForm: React.FC = () => {
 
       {/* Password Field */}
       <div>
-        <label className="block text-[#555555] mb-1 font-medium text-base">
+        <label className="block text-black mb-1 font-medium text-base">
           Password
         </label>
         <div className="relative">
-          {/* Optional icon on the left */}
           <span className="absolute inset-y-0 left-3 flex items-center text-gray-400">
             <FiLock />
           </span>
           <input
             type="password"
-            placeholder="Enter your password"
+            placeholder="Enter Your Password"
             {...register("password")}
             className="w-full pl-10 pr-3 py-2 border border-[#E4E7FF] rounded-md 
                        focus:outline-none focus:ring-2 focus:ring-[#29224F] 
-                       placeholder-gray-500"
+                       placeholder:text-[#000000] text-black"
           />
           {errors.password && (
-            <p className="text-red-600 text-sm mt-1">
-              {errors.password.message}
-            </p>
+            <p className="text-red-600 text-sm mt-1">{errors.password.message}</p>
           )}
         </div>
       </div>
@@ -109,7 +108,7 @@ const LoginForm: React.FC = () => {
           </Link>
         </p>
       </div>
-    </form>
+    </motion.form>
   );
 };
 

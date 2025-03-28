@@ -15,16 +15,14 @@ const signUpSchema = z
       .string()
       .regex(/^(\+?\d{1,3}[- ]?)?\d{7,15}$/, "Please enter a valid mobile number"),
     password: z.string().min(6, "Password must be at least 6 characters"),
-    confirmPassword: z
-      .string()
-      .min(6, "Password must be at least 6 characters"),
+    confirmPassword: z.string().min(6, "Password must be at least 6 characters"),
   })
   .refine((data) => data.password === data.confirmPassword, {
     path: ["confirmPassword"],
     message: "Passwords must match",
   });
 
-type SignUpFormData = z.infer<typeof signUpSchema>;
+export type SignUpFormData = z.infer<typeof signUpSchema>;
 
 const SignUpForm: React.FC = () => {
   const {
@@ -37,24 +35,23 @@ const SignUpForm: React.FC = () => {
 
   const onSubmit: SubmitHandler<SignUpFormData> = (data) => {
     console.log("Sign Up Data:", data);
-    // TODO: Add production-level logic (e.g. API calls, etc.)
+    // TODO: Add production-level logic (API calls, redirects, etc.)
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
       {/* Row 1: First Name & Last Name */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* First Name */}
         <div>
-          <label className="block text-[#555555] mb-1 font-medium">
+          <label className="block text-black mb-1 text-lg font-medium">
             First Name
           </label>
           <input
             type="text"
-            placeholder="Enter your name."
+            placeholder="Enter First Name"
             {...register("firstName")}
-            className="w-full px-3 py-2 border border-[#E4E7FF] rounded-md 
-                       focus:outline-none focus:ring-2 focus:ring-[#29224F]"
+            className="w-full px-4 py-3 text-lg border-2 border-[#E4E7FF] rounded-md focus:outline-none focus:ring-2 focus:ring-[#29224F] placeholder:text-[#000000] text-black"
           />
           {errors.firstName && (
             <p className="text-red-600 text-sm mt-1">
@@ -65,15 +62,14 @@ const SignUpForm: React.FC = () => {
 
         {/* Last Name */}
         <div>
-          <label className="block text-[#555555] mb-1 font-medium">
+          <label className="block text-black mb-1 text-lg font-medium">
             Last Name
           </label>
           <input
             type="text"
-            placeholder="Enter your name."
+            placeholder="Enter Last Name"
             {...register("lastName")}
-            className="w-full px-3 py-2 border border-[#E4E7FF] rounded-md 
-                       focus:outline-none focus:ring-2 focus:ring-[#29224F]"
+            className="w-full px-4 py-3 text-lg border-2 border-[#E4E7FF] rounded-md focus:outline-none focus:ring-2 focus:ring-[#29224F] placeholder:text-[#000000] text-black"
           />
           {errors.lastName && (
             <p className="text-red-600 text-sm mt-1">
@@ -84,18 +80,17 @@ const SignUpForm: React.FC = () => {
       </div>
 
       {/* Row 2: Email & Mobile */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* Email */}
         <div>
-          <label className="block text-[#555555] mb-1 font-medium">
+          <label className="block text-black mb-1 text-lg font-medium">
             Email Id
           </label>
           <input
             type="email"
             placeholder="info@xyz.com"
             {...register("email")}
-            className="w-full px-3 py-2 border border-[#E4E7FF] rounded-md 
-                       focus:outline-none focus:ring-2 focus:ring-[#29224F]"
+            className="w-full px-4 py-3 text-lg border-2 border-[#E4E7FF] rounded-md focus:outline-none focus:ring-2 focus:ring-[#29224F] placeholder:text-[#000000] text-black"
           />
           {errors.email && (
             <p className="text-red-600 text-sm mt-1">
@@ -106,15 +101,14 @@ const SignUpForm: React.FC = () => {
 
         {/* Mobile */}
         <div>
-          <label className="block text-[#555555] mb-1 font-medium">
+          <label className="block text-black mb-1 text-lg font-medium">
             Mobile No.
           </label>
           <input
             type="text"
-            placeholder="+91 - 86968 58000"
+            placeholder="+92-xxx-xxxxxxx"
             {...register("mobile")}
-            className="w-full px-3 py-2 border border-[#E4E7FF] rounded-md 
-                       focus:outline-none focus:ring-2 focus:ring-[#29224F]"
+            className="w-full px-4 py-3 text-lg border-2 border-[#E4E7FF] rounded-md focus:outline-none focus:ring-2 focus:ring-[#29224F] placeholder:text-[#000000] text-black"
           />
           {errors.mobile && (
             <p className="text-red-600 text-sm mt-1">
@@ -125,18 +119,17 @@ const SignUpForm: React.FC = () => {
       </div>
 
       {/* Row 3: Password & Confirm Password */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* Password */}
         <div>
-          <label className="block text-[#555555] mb-1 font-medium">
+          <label className="block text-black mb-1 text-lg font-medium">
             Password
           </label>
           <input
             type="password"
             placeholder="xxxxxxx"
             {...register("password")}
-            className="w-full px-3 py-2 border border-[#E4E7FF] rounded-md 
-                       focus:outline-none focus:ring-2 focus:ring-[#29224F]"
+            className="w-full px-4 py-3 text-lg border-2 border-[#E4E7FF] rounded-md focus:outline-none focus:ring-2 focus:ring-[#29224F] placeholder:text-[#000000] text-black"
           />
           {errors.password && (
             <p className="text-red-600 text-sm mt-1">
@@ -147,15 +140,14 @@ const SignUpForm: React.FC = () => {
 
         {/* Confirm Password */}
         <div>
-          <label className="block text-[#555555] mb-1 font-medium">
+          <label className="block text-black mb-1 text-lg font-medium">
             Confirm Password
           </label>
           <input
             type="password"
             placeholder="xxxxxxx"
             {...register("confirmPassword")}
-            className="w-full px-3 py-2 border border-[#E4E7FF] rounded-md 
-                       focus:outline-none focus:ring-2 focus:ring-[#29224F]"
+            className="w-full px-4 py-3 text-lg border-2 border-[#E4E7FF] rounded-md focus:outline-none focus:ring-2 focus:ring-[#29224F] placeholder:text-[#000000] text-black"
           />
           {errors.confirmPassword && (
             <p className="text-red-600 text-sm mt-1">
@@ -166,11 +158,10 @@ const SignUpForm: React.FC = () => {
       </div>
 
       {/* Sign Up Button */}
-      <div>
+      <div className="mt-6">
         <button
           type="submit"
-          className="w-full mt-4 bg-[#29224F] text-white py-3 rounded-md 
-                     hover:bg-gray-800 transition-colors font-semibold text-lg"
+          className="w-full bg-[#29224F] text-white py-3 rounded-md hover:bg-[#555555] transition-colors font-semibold text-lg"
         >
           Sign Up
         </button>
