@@ -1,13 +1,16 @@
 "use client";
-// pages/index.tsx
-import { NextPage } from 'next';
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { NextPage } from "next";
+import React, { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import Link from "next/link";
 import HeroSection from "@/components/HeroSection";
 import InfoSection from "@/components/InfoSection";
 import TrendingSection from "@/components/TrendingSection";
 import ExclusiveOfferPage from "@/components/exclusive-offer";
 import FooterSection from "@/components/FooterSection";
+
+// Wrap Next.js Link with Framer Motion
+const MotionLink = motion(Link);
 
 const LandingPage: NextPage = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -62,15 +65,16 @@ const LandingPage: NextPage = () => {
 
         {/* Right Section: Desktop Login & Mobile Hamburger */}
         <div className="flex items-center">
-          {/* Desktop Login Button */}
-          <motion.button
+          {/* Desktop Login Link */}
+          <MotionLink
+            href="/sign-in"  // Updated route to "/sign-in"
+            passHref
             className="bg-[#29224F] text-white px-5 py-2 rounded-md hover:bg-gray-800 transition-colors hidden md:block text-lg"
-            type="button"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
             Login
-          </motion.button>
+          </MotionLink>
 
           {/* Mobile Hamburger Button */}
           <motion.button
@@ -114,14 +118,15 @@ const LandingPage: NextPage = () => {
                   {link}
                 </motion.a>
               ))}
-              <motion.a
-                href="#"
+              <MotionLink
+                href="/sign-in" // Updated route to "/sign-in"
+                passHref
                 className="block bg-[#29224F] text-white px-5 py-2 rounded-md text-center hover:bg-gray-800 transition-colors text-lg"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
                 Login
-              </motion.a>
+              </MotionLink>
             </div>
           </motion.div>
         )}
