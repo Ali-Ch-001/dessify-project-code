@@ -1,10 +1,8 @@
 "use client";
-
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FiFacebook, FiTwitter, FiInstagram } from "react-icons/fi";
 
-// Define the pop-up content for each link
 const popupData: Record<string, { title: string; body: string }> = {
   Products: {
     title: "Products",
@@ -53,28 +51,21 @@ const popupData: Record<string, { title: string; body: string }> = {
 };
 
 const FooterSection: React.FC = () => {
-  // State for controlling the pop-up
   const [showPopup, setShowPopup] = useState(false);
   const [popupTitle, setPopupTitle] = useState("");
   const [popupBody, setPopupBody] = useState("");
 
-  // Open the pop-up with the given link key
   const openPopup = (key: string) => {
-    const data = popupData[key] || {
-      title: "Unknown",
-      body: "No content available.",
-    };
+    const data = popupData[key] || { title: "Unknown", body: "No content available." };
     setPopupTitle(data.title);
     setPopupBody(data.body);
     setShowPopup(true);
   };
 
-  // Close the pop-up
   const closePopup = () => {
     setShowPopup(false);
   };
 
-  // Render the footer
   return (
     <motion.footer
       className="bg-[#A9BAEF] text-[#29224F] w-full relative"
@@ -85,120 +76,93 @@ const FooterSection: React.FC = () => {
     >
       {/* Top Section */}
       <div className="container mx-auto px-4 md:px-0 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          {/* Brand & Social Icons */}
+        {/* Desktop Grid: 4 Columns */}
+        <div className="hidden md:grid grid-cols-4 gap-8">
+          {/* Column 1: Brand & Social Icons */}
           <div>
             <h2 className="text-2xl font-bold mb-4">Dressify</h2>
             <div className="flex space-x-4">
               <button
-                onClick={() => openPopup("Products")} // Example: reusing "Products" pop-up or create separate key
-                aria-label="Open Facebook"
+                onClick={() => openPopup("Products")}
+                aria-label="Open Products"
                 className="hover:text-[#29224F]/80 transition-colors"
               >
                 <FiFacebook size={24} />
               </button>
               <button
-                onClick={() => openPopup("Pricing")} // Example: reusing "Pricing" pop-up
-                aria-label="Open Twitter"
+                onClick={() => openPopup("Pricing")}
+                aria-label="Open Pricing"
                 className="hover:text-[#29224F]/80 transition-colors"
               >
                 <FiTwitter size={24} />
               </button>
               <button
-                onClick={() => openPopup("Releases")} // Example: reusing "Releases" pop-up
-                aria-label="Open Instagram"
+                onClick={() => openPopup("Releases")}
+                aria-label="Open Releases"
                 className="hover:text-[#29224F]/80 transition-colors"
               >
                 <FiInstagram size={24} />
               </button>
             </div>
           </div>
-
-          {/* SHOP Links */}
+          {/* Column 2: SHOP Links */}
           <div>
             <h3 className="text-lg font-semibold mb-4">SHOP</h3>
             <ul className="space-y-2">
               <li>
-                <button
-                  onClick={() => openPopup("Products")}
-                  className="hover:text-[#29224F]/80 transition-colors"
-                >
+                <button onClick={() => openPopup("Products")} className="hover:text-[#29224F]/80 transition-colors text-sm">
                   Products
                 </button>
               </li>
               <li>
-                <button
-                  onClick={() => openPopup("Overview")}
-                  className="hover:text-[#29224F]/80 transition-colors"
-                >
+                <button onClick={() => openPopup("Overview")} className="hover:text-[#29224F]/80 transition-colors text-sm">
                   Overview
                 </button>
               </li>
               <li>
-                <button
-                  onClick={() => openPopup("Pricing")}
-                  className="hover:text-[#29224F]/80 transition-colors"
-                >
+                <button onClick={() => openPopup("Pricing")} className="hover:text-[#29224F]/80 transition-colors text-sm">
                   Pricing
                 </button>
               </li>
               <li>
-                <button
-                  onClick={() => openPopup("Releases")}
-                  className="hover:text-[#29224F]/80 transition-colors"
-                >
+                <button onClick={() => openPopup("Releases")} className="hover:text-[#29224F]/80 transition-colors text-sm">
                   Releases
                 </button>
               </li>
             </ul>
           </div>
-
-          {/* COMPANY Links */}
+          {/* Column 3: COMPANY Links */}
           <div>
             <h3 className="text-lg font-semibold mb-4">COMPANY</h3>
             <ul className="space-y-2">
               <li>
-                <button
-                  onClick={() => openPopup("AboutUs")}
-                  className="hover:text-[#29224F]/80 transition-colors"
-                >
+                <button onClick={() => openPopup("AboutUs")} className="hover:text-[#29224F]/80 transition-colors text-sm">
                   About Us
                 </button>
               </li>
               <li>
-                <button
-                  onClick={() => openPopup("Contact")}
-                  className="hover:text-[#29224F]/80 transition-colors"
-                >
+                <button onClick={() => openPopup("Contact")} className="hover:text-[#29224F]/80 transition-colors text-sm">
                   Contact
                 </button>
               </li>
               <li>
-                <button
-                  onClick={() => openPopup("News")}
-                  className="hover:text-[#29224F]/80 transition-colors"
-                >
+                <button onClick={() => openPopup("News")} className="hover:text-[#29224F]/80 transition-colors text-sm">
                   News
                 </button>
               </li>
               <li>
-                <button
-                  onClick={() => openPopup("Support")}
-                  className="hover:text-[#29224F]/80 transition-colors"
-                >
+                <button onClick={() => openPopup("Support")} className="hover:text-[#29224F]/80 transition-colors text-sm">
                   Support
                 </button>
               </li>
             </ul>
           </div>
-
-          {/* Stay Up to Date */}
+          {/* Column 4: Stay Up To Date */}
           <div>
             <h3 className="text-lg font-semibold mb-4">STAY UP TO DATE</h3>
             <form
               onSubmit={(e) => {
                 e.preventDefault();
-                // Add your email submission logic here
                 alert("Thanks for subscribing!");
               }}
               className="flex items-center space-x-2"
@@ -206,12 +170,113 @@ const FooterSection: React.FC = () => {
               <input
                 type="email"
                 placeholder="Enter your email"
-                className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-[#29224F] text-black"
+                className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-[#29224F] text-black text-sm"
                 required
               />
               <button
                 type="submit"
-                className="bg-[#29224F] text-white px-4 py-2 rounded-md hover:bg-gray-800 transition-colors"
+                className="bg-[#29224F] text-white px-4 py-2 rounded-md hover:bg-gray-800 transition-colors text-sm"
+              >
+                SUBMIT
+              </button>
+            </form>
+          </div>
+        </div>
+
+        {/* Mobile Grid: 3 Columns */}
+        <div className="grid grid-cols-3 gap-4 md:hidden">
+          {/* Column 1: Brand & Social Icons */}
+          <div className="text-center">
+            <h2 className="text-xl font-bold mb-2">Dressify</h2>
+            <div className="flex justify-center space-x-2">
+              <button
+                onClick={() => openPopup("Products")}
+                aria-label="Open Products"
+                className="hover:text-[#29224F]/80 transition-colors"
+              >
+                <FiFacebook size={20} />
+              </button>
+              <button
+                onClick={() => openPopup("Pricing")}
+                aria-label="Open Pricing"
+                className="hover:text-[#29224F]/80 transition-colors"
+              >
+                <FiTwitter size={20} />
+              </button>
+              <button
+                onClick={() => openPopup("Releases")}
+                aria-label="Open Releases"
+                className="hover:text-[#29224F]/80 transition-colors"
+              >
+                <FiInstagram size={20} />
+              </button>
+            </div>
+          </div>
+          {/* Column 2: Combined SHOP & COMPANY Links */}
+          <div className="text-center">
+            <h3 className="text-sm font-semibold mb-2">SHOP &amp; COMPANY</h3>
+            <ul className="space-y-1">
+              <li>
+                <button onClick={() => openPopup("Products")} className="text-xs hover:text-[#29224F]/80 transition-colors">
+                  Products
+                </button>
+              </li>
+              <li>
+                <button onClick={() => openPopup("Overview")} className="text-xs hover:text-[#29224F]/80 transition-colors">
+                  Overview
+                </button>
+              </li>
+              <li>
+                <button onClick={() => openPopup("Pricing")} className="text-xs hover:text-[#29224F]/80 transition-colors">
+                  Pricing
+                </button>
+              </li>
+              <li>
+                <button onClick={() => openPopup("Releases")} className="text-xs hover:text-[#29224F]/80 transition-colors">
+                  Releases
+                </button>
+              </li>
+              <li>
+                <button onClick={() => openPopup("AboutUs")} className="text-xs hover:text-[#29224F]/80 transition-colors">
+                  About Us
+                </button>
+              </li>
+              <li>
+                <button onClick={() => openPopup("Contact")} className="text-xs hover:text-[#29224F]/80 transition-colors">
+                  Contact
+                </button>
+              </li>
+              <li>
+                <button onClick={() => openPopup("News")} className="text-xs hover:text-[#29224F]/80 transition-colors">
+                  News
+                </button>
+              </li>
+              <li>
+                <button onClick={() => openPopup("Support")} className="text-xs hover:text-[#29224F]/80 transition-colors">
+                  Support
+                </button>
+              </li>
+            </ul>
+          </div>
+          {/* Column 3: Stay Up To Date */}
+          <div className="text-center">
+            <h3 className="text-sm font-semibold mb-2">STAY UP TO DATE</h3>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                alert("Thanks for subscribing!");
+              }}
+              className="flex flex-col items-center space-y-1"
+            >
+              <input
+                type="email"
+                placeholder="Email"
+                className="w-full px-2 py-1 rounded-md focus:outline-none focus:ring-2 focus:ring-[#29224F] text-black text-xs"
+                required
+              />
+              <button
+                type="submit"
+                className="bg-[#29224F] text-white px-3 py-1 rounded-md hover:bg-gray-800 transition-colors text-xs mt-1"
               >
                 SUBMIT
               </button>
@@ -222,25 +287,16 @@ const FooterSection: React.FC = () => {
 
       {/* Bottom Section */}
       <hr className="border-[#29224F]/50" />
-      <div className="container mx-auto px-4 md:px-0 py-4 flex flex-col md:flex-row items-center justify-between space-y-4 md:space-y-0">
-        <p className="text-sm">&copy; 2023 Dressify. All rights reserved.</p>
-        <div className="flex space-x-4 text-sm">
-          <button
-            onClick={() => openPopup("Terms")}
-            className="hover:text-[#29224F]/80 transition-colors"
-          >
+      <div className="container mx-auto px-4 md:px-0 py-3 flex flex-col md:flex-row items-center justify-between space-y-2 md:space-y-0">
+        <p className="text-xs md:text-sm">&copy; 2023 Dressify. All rights reserved.</p>
+        <div className="flex space-x-2 text-xs md:text-sm">
+          <button onClick={() => openPopup("Terms")} className="hover:text-[#29224F]/80 transition-colors">
             Terms
           </button>
-          <button
-            onClick={() => openPopup("Privacy")}
-            className="hover:text-[#29224F]/80 transition-colors"
-          >
+          <button onClick={() => openPopup("Privacy")} className="hover:text-[#29224F]/80 transition-colors">
             Privacy
           </button>
-          <button
-            onClick={() => openPopup("Cookies")}
-            className="hover:text-[#29224F]/80 transition-colors"
-          >
+          <button onClick={() => openPopup("Cookies")} className="hover:text-[#29224F]/80 transition-colors">
             Cookies
           </button>
         </div>
