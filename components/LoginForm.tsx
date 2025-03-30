@@ -57,7 +57,7 @@ const LoginForm: React.FC = () => {
         </label>
         <input
           type="email"
-          placeholder="info@xyz.com"
+          placeholder="testing@dressify.com"
           {...register("email")}
           className="w-full px-6 py-4 text-lg border-2 border-[#E4E7FF] rounded-md 
                      focus:outline-none focus:ring-2 focus:ring-[#29224F] placeholder:text-[#000000] text-black"
