@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^4.1.3",
+    "@supabase/supabase-js": "^2.49.4",
     "framer-motion": "^12.6.2",
     "next": "15.2.4",
     "react": "^19.0.0",
