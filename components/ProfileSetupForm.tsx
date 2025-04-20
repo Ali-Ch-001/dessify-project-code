@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-expressions */
 "use client";
 
 import React, { useState } from "react";
@@ -25,16 +26,6 @@ const defaultValues: ProfileData = {
   glasses: "No",
   skin_tone: "",
 };
-
-function hexToRgb(hex: string): string {
-  hex = hex.replace("#", "");
-  if (hex.length === 3) {
-    hex = hex.split("").map((c) => c + c).join("");
-  }
-  const bigint = parseInt(hex, 16);
-  return `${(bigint >> 16) & 255},${(bigint >> 8) & 255},${bigint & 255}`;
-}
-
 interface ProfileSetupFormProps {
   onComplete?: () => void;
 }
@@ -71,6 +62,7 @@ const ProfileSetupForm: React.FC<ProfileSetupFormProps> = ({ onComplete }) => {
         setValue(key as keyof ProfileData, value)
       );
       setShowForm(true);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       setUploadError(err.message || "Error extracting features");
     } finally {
