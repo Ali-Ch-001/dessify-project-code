@@ -55,24 +55,44 @@ export default function UserInfoPage() {
   // ─── Load existing profile ─────────────────────────
   useEffect(() => {
     (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { router.push("/login"); return; }
-      const { data, error } = await supabase
+      // 1) Get the logged-in user
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        router.push("/login");
+        return;
+      }
+  
+      // 2) Fetch their profile row
+      const { data: profileData } = await supabase
         .from("profiles")
         .select("*")
         .eq("id", user.id)
         .single();
-      if (data) {
-        setProfile(data as Profile);
-        Object.entries(data).forEach(([k, v]) => {
-          if (v != null) setValue(k as any, v);
+  
+      if (profileData) {
+        // 3) Save to local state
+        setProfile(profileData);
+  
+        // 4) Populate the form fields—only keys defined in Profile
+        (Object.keys(profileData) as (keyof Profile)[]).forEach((key) => {
+          const val = profileData[key];
+          if (val != null) {
+            setValue(key, val);
+          }
         });
-        setAvatarPreview((data as any).avatar_url);
+  
+        // 5) Set the avatar preview if present
+        if (profileData.avatar_url) {
+          setAvatarPreview(profileData.avatar_url);
+        }
       }
+  
       setLoading(false);
     })();
   }, [router, setValue]);
-
+  
   // ─── Avatar upload ────────────────────────────────
   async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -111,21 +131,38 @@ export default function UserInfoPage() {
       const res = await fetch(FEATURE_URL, { method: "POST", body: fd });
       if (!res.ok) throw new Error("Extraction failed");
       const feats: Partial<Record<keyof Profile, string>> = await res.json();
-
-      (["gender","body_type","hair_type","hair_color","eyeball_color","glasses","skin_tone"] as const)
-        .forEach((field) => {
-          const raw = feats[field];
-          if (raw == null) return;
-          if (field === "glasses") setValue("glasses", raw === "Yes");
-          else setValue(field, raw);
-        });
-
+  
+      ([
+        "gender",
+        "body_type",
+        "hair_type",
+        "hair_color",
+        "eyeball_color",
+        "glasses",
+        "skin_tone",
+      ] as const).forEach((field) => {
+        const raw = feats[field];
+        if (raw == null) return;
+        if (field === "glasses") {
+          // raw comes back as "Yes"/"No"
+          setValue("glasses", raw === "Yes");
+        } else {
+          setValue(field, raw);
+        }
+      });
+  
       setShowModal(false);
-    } catch (err: any) {
-      setExtractError(err.message);
+    } catch (err: unknown) {
+      // Narrow down to Error to extract message, else stringify
+      if (err instanceof Error) {
+        setExtractError(err.message);
+      } else {
+        setExtractError(String(err));
+      }
+    } finally {
+      setExtracting(false);
     }
-    setExtracting(false);
-  }
+  }  
 
   // ─── Form submission ──────────────────────────────
   const onSubmit: SubmitHandler<Profile> = async (data) => {
@@ -285,7 +322,7 @@ export default function UserInfoPage() {
             <div key={name}>
               <label className="block mb-1 font-medium text-gray-800">{label}</label>
               <select
-                {...register(name as any, { required:true })}
+                {...register(name as keyof Profile, { required: true })}
                 className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-400 text-gray-900"
               >
                 <option value="">Select…</option>
