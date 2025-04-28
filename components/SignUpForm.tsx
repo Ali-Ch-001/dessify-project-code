@@ -36,22 +36,34 @@ const SignUpForm: React.FC = () => {
   const [isSuccess, setIsSuccess] = useState(false);
 
   const onSubmit: SubmitHandler<SignUpFormData> = async (data) => {
-    const { email, password, firstName, lastName, mobile } = data;
-    // Register user using email signup and store phone in metadata
-    const { error } = await supabase.auth.signUp({
+    const { firstName, lastName, email, password, mobile } = data;
+    const { data: signUpData, error } = await supabase.auth.signUp({
       email,
       password,
-      options: {
-        data: { firstName, lastName, mobile },
-      },
+      options: { data: { firstName, lastName, mobile } },
     });
+  
     if (error) {
       console.error("Error signing up:", error.message);
-      // Optionally, display an error message to the user
+      // show error to user if you like
     } else {
+      // insert into profiles
+      const userId = signUpData.user?.id;
+      if (userId) {
+        const { error: profileErr } = await supabase
+          .from("profiles")
+          .insert({
+            id: userId,
+            display_name: `${firstName} ${lastName}`,
+            mobile,
+          });
+        if (profileErr) {
+          console.error("Error creating profile row:", profileErr.message);
+        }
+      }
       setIsSuccess(true);
     }
-  };
+  };  
 
   useEffect(() => {
     if (isSuccess) {

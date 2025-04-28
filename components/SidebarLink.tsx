@@ -1,31 +1,33 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { ReactNode } from 'react';
+import Link from "next/link";
+import { ReactNode } from "react";
 
-interface SidebarLinkProps {
+export interface SidebarLinkProps {
   href: string;
   icon: ReactNode;
-  label: string;
+  label?: string;
+  active?: boolean;
 }
 
-export default function SidebarLink({ href, icon, label }: SidebarLinkProps) {
-  const pathname = usePathname();
-
-  const isActive = pathname.startsWith(href);
-
+export default function SidebarLink({
+  href,
+  icon,
+  label,
+  active = false,
+}: SidebarLinkProps) {
   return (
     <Link
       href={href}
-      className={`flex items-center gap-2 p-2 rounded-md transition-colors duration-300 ${
-        isActive
-          ? 'bg-gray-75 text-[#29224F] font-semibold shadow-md border-l-4 border-indigo-500 pl-4'
-          : 'text-[#29224F]/50 hover:bg-white/10'
-      }`}
+      className={`
+        flex items-center gap-3 py-2 px-3 rounded-md transition-colors
+        ${active
+          ? "bg-white/30 shadow-md text-white"
+          : "hover:bg-white/20 text-white/90"}
+      `}
     >
       {icon}
-      <span>{label}</span>
+      {label && <span className="whitespace-nowrap">{label}</span>}
     </Link>
   );
 }
