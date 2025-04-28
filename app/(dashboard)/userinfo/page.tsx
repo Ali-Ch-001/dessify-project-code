@@ -6,8 +6,19 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import ProfileSetupForm from "@/components/ProfileSetupForm";
 
+// ✅ Define a proper Profile Type
+interface Profile {
+  gender: string | null;
+  body_type: string | null;
+  hair_type: string | null;
+  hair_color: string | null;
+  eyeball_color: string | null;
+  glasses: boolean | null;
+  skin_tone: string | null;
+}
+
 export default function Page() {
-  const [profile, setProfile] = useState<any>(null);
+  const [profile, setProfile] = useState<Profile | null>(null); // ✅ Use Profile type
   const [showProfileSetup, setShowProfileSetup] = useState(false);
   const router = useRouter();
 
@@ -27,7 +38,7 @@ export default function Page() {
         setShowProfileSetup(true);
       }
     } else {
-      setProfile(data);
+      setProfile(data as Profile); // ✅ Cast safely
       setShowProfileSetup(false);
     }
   };
@@ -89,11 +100,19 @@ export default function Page() {
 }
 
 /* Small helper component for profile fields */
-function ProfileField({ label, value, isColor }: { label: string; value: any; isColor?: boolean }) {
+function ProfileField({
+  label,
+  value,
+  isColor,
+}: {
+  label: string;
+  value: string | boolean | null; // ✅ Safe types
+  isColor?: boolean;
+}) {
   return (
     <p className="text-lg text-gray-800">
       <strong>{label}:</strong> {value || "Not set"}
-      {isColor && value && (
+      {isColor && value && typeof value === "string" && (
         <span
           style={{ backgroundColor: `rgb(${value})` }}
           className="inline-block ml-2 w-6 h-6 rounded-full border border-gray-300"

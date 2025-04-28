@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion';
 import PrimaryButton from '@/components/PrimaryButton';
 import TopPicksCard from '@/components/TopPicksCard';
+import Image from 'next/image'; // ✅ Import next/image
 
 export default function HomePage() {
   const today = new Date().toLocaleDateString('en-US', {
@@ -31,7 +32,17 @@ export default function HomePage() {
             Ready to dazzle? Click here and tell me, what’s your mood today? Let’s find the perfect outfit together!
           </p>
         </div>
-        <img src="/dashboard_img/homepage.png" alt="Welcome" className="w-36 h-36 object-contain" />
+
+        {/* ✅ Updated image */}
+        <div className="w-36 h-36 relative">
+          <Image
+            src="/dashboard_img/homepage.png"
+            alt="Welcome"
+            fill
+            className="object-contain rounded-lg"
+            priority // ✅ optional for faster loading
+          />
+        </div>
       </motion.div>
 
       {/* AI Chat Prompt */}
@@ -48,11 +59,11 @@ export default function HomePage() {
       <div>
         <h2 className="text-xl font-semibold text-gray-900 mb-4">Top Picks For You Today!</h2>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <TopPicksCard image="#" title="Sunny Escape" />
-          <TopPicksCard image="#" title="City Slick" />
-          <TopPicksCard image="#" title="Neutral Charm" />
-          <TopPicksCard image="#" title="Pop of Pattern" />
-        </div>
+  <TopPicksCard image="/dashboard_img/loading.png" title="Sunny Escape" />
+  <TopPicksCard image="/dashboard_img/loading.png" title="City Slick" />
+  <TopPicksCard image="/dashboard_img/loading.png" title="Neutral Charm" />
+  <TopPicksCard image="/dashboard_img/loading.png" title="Pop of Pattern" />
+</div>
       </div>
     </motion.div>
   );

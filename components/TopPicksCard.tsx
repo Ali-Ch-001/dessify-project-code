@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import Image from 'next/image'; // ✅ Import next/image
 
 interface TopPicksCardProps {
   image: string;
@@ -14,7 +15,16 @@ export default function TopPicksCard({ image, title }: TopPicksCardProps) {
       whileHover={{ scale: 1.03 }}
       transition={{ type: 'spring', stiffness: 200 }}
     >
-      <img src={image} alt={title} className="rounded-lg object-cover h-64 w-full" />
+      {/* ✅ Updated to use next/image */}
+      <div className="relative w-full h-64 rounded-lg overflow-hidden">
+        <Image
+          src={image}
+          alt={title}
+          fill
+          className="object-cover rounded-lg"
+          sizes="(max-width: 768px) 100vw, 25vw" // Responsive optimization
+        />
+      </div>
       <p className="mt-2 font-medium text-gray-700">{title}</p>
     </motion.div>
   );
