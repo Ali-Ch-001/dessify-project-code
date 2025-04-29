@@ -116,7 +116,7 @@ export default function UploadWardrobePage() {
     >
       {/* Header */}
       <motion.div
-        className="bg-purple-600 rounded-xl p-8 text-white text-center shadow-lg"
+        className="bg-indigo-400 rounded-xl p-8 text-white text-center shadow-lg"
         whileHover={{ scale: 1.02 }}
       >
         <h1 className="text-3xl font-bold">Upload Your Wardrobe</h1>
