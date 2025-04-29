@@ -1,19 +1,24 @@
-'use client';
+// components/PrimaryButton.tsx
+import React from "react";
 
-import { motion } from 'framer-motion';
+export interface PrimaryButtonProps
+  extends React.ButtonHTMLAttributes<HTMLButtonElement> {}
 
-interface PrimaryButtonProps {
-  children: React.ReactNode;
-}
-
-export default function PrimaryButton({ children }: PrimaryButtonProps) {
+export default function PrimaryButton({
+  children,
+  className = "",
+  ...props
+}: PrimaryButtonProps) {
   return (
-    <motion.button
-      whileHover={{ scale: 1.05 }}
-      whileTap={{ scale: 0.95 }}
-      className="bg-[#1E2772] text-white px-6 py-2 rounded-lg hover:bg-[#1B2368] transition"
+    <button
+      {...props}
+      className={
+        `bg-[#29224F] text-white py-3 px-6 rounded-md 
+         hover:bg-[#555555] transition-colors font-semibold text-lg ` +
+        className
+      }
     >
       {children}
-    </motion.button>
+    </button>
   );
 }
