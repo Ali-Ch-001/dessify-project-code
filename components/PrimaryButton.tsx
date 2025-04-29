@@ -1,22 +1,21 @@
 // components/PrimaryButton.tsx
 import React from "react";
 
-export interface PrimaryButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement> {}
-
 export default function PrimaryButton({
   children,
   className = "",
   ...props
-}: PrimaryButtonProps) {
+}: React.ButtonHTMLAttributes<HTMLButtonElement>) {
   return (
     <button
       {...props}
-      className={
-        `bg-[#29224F] text-white py-3 px-6 rounded-md 
-         hover:bg-[#555555] transition-colors font-semibold text-lg ` +
-        className
-      }
+      className={`
+        bg-gradient-to-r from-purple-400 to-indigo-400
+        hover:from-purple-500 hover:to-indigo-600
+        text-white py-3 px-6 rounded-md
+        transition-colors duration-200 font-semibold text-lg
+        ${className}
+      `}
     >
       {children}
     </button>

@@ -1,13 +1,12 @@
-// app/(dashboard)/upload_wardrobe/page.tsx
 'use client';
 
 import React, { useRef, useState, useEffect, ChangeEvent } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Webcam from 'react-webcam';
-import { X } from 'lucide-react';
 import PrimaryButton from '@/components/PrimaryButton';
 import DownloadIcon from '@/components/DownloadIcon';
-import { supabase } from '@/lib/supabaseClient';
+import { X } from 'lucide-react';
+import Image from 'next/image'
 
 type UploadItem = {
   id: string;
@@ -19,37 +18,34 @@ type UploadItem = {
 };
 
 export default function UploadWardrobePage() {
-  const API_URL = process.env.NEXT_PUBLIC_CATEGORIZATION_URL!;
   const fileInputRef = useRef<HTMLInputElement>(null);
   const webcamRef    = useRef<Webcam>(null);
   const [items, setItems]       = useState<UploadItem[]>([]);
   const [showWebcam, setShowWebcam] = useState(false);
   const [userId, setUserId]     = useState<string>('');
+  const API_URL = process.env.NEXT_PUBLIC_CATEGORIZATION_URL!;
 
-  // pull current user ID
+  // get user ID
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      if (data.user) setUserId(data.user.id);
-    });
+    import('@/lib/supabaseClient').then(({ supabase }) =>
+      supabase.auth.getUser().then(({ data, error }) => {
+        if (!error && data.user) setUserId(data.user.id);
+      })
+    );
   }, []);
 
-  // add new files
+  // add new files to queue
   const handleFiles = (files: FileList) => {
     const newItems = Array.from(files).map(f => ({
-      id:      crypto.randomUUID(),
-      file:    f,
+      id:   crypto.randomUUID(),
+      file: f,
       preview: URL.createObjectURL(f),
-      status:  'pending' as const
+      status: 'pending' as const,
     }));
     setItems(i => [...i, ...newItems]);
   };
 
-  // delete before upload
-  const removeItem = (id: string) => {
-    setItems(i => i.filter(x => x.id !== id));
-  };
-
-  // upload one
+  // upload one item
   const uploadItem = async (item: UploadItem) => {
     setItems(i =>
       i.map(x => x.id === item.id ? { ...x, status: 'uploading' } : x)
@@ -70,28 +66,27 @@ export default function UploadWardrobePage() {
           : x
         )
       );
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
       setItems(i =>
         i.map(x => x.id === item.id
-          ? { ...x, status: 'error', error: err.message }
+          ? { ...x, status: 'error', error: msg }
           : x
         )
       );
     }
   };
 
-  // upload all pending, one by one
+  // upload all pending
   const uploadAll = async () => {
     for (const it of items.filter(x => x.status === 'pending')) {
-      // eslint-disable-next-line no-await-in-loop
       await uploadItem(it);
     }
   };
 
-  // drag&drop
-  const onDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    if (e.dataTransfer.files) handleFiles(e.dataTransfer.files);
+  // remove from queue
+  const removeItem = (id: string) => {
+    setItems(i => i.filter(x => x.id !== id));
   };
 
   // webcam capture
@@ -102,7 +97,9 @@ export default function UploadWardrobePage() {
       .then(r => r.blob())
       .then(blob => {
         const file = new File([blob], `capture-${Date.now()}.jpg`, { type: 'image/jpeg' });
-        handleFiles({ 0: file, length: 1, item: (_: number) => file } as unknown as FileList);
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        handleFiles(dt.files);
         setShowWebcam(false);
       });
   };
@@ -116,16 +113,17 @@ export default function UploadWardrobePage() {
     >
       {/* Header */}
       <motion.div
-        className="bg-indigo-400 rounded-xl p-8 text-white text-center shadow-lg"
+        className="bg-gradient-to-r from-purple-400 to-indigo-400 rounded-2xl p-6 text-white text-center shadow-xl"
         whileHover={{ scale: 1.02 }}
+        transition={{ type: 'spring', stiffness: 300 }}
       >
-        <h1 className="text-3xl font-bold">Upload Your Wardrobe</h1>
+        <h1 className="text-3xl font-extrabold">Upload Your Wardrobe</h1>
       </motion.div>
 
       {/* Dropzone */}
       <motion.div
         onClick={() => fileInputRef.current?.click()}
-        onDrop={onDrop}
+        onDrop={e => { e.preventDefault(); handleFiles(e.dataTransfer.files); }}
         onDragOver={e => e.preventDefault()}
         className="border-2 border-dashed border-gray-400 rounded-lg p-10 text-center shadow-md cursor-pointer"
         whileHover={{ scale: 1.01 }}
@@ -145,12 +143,9 @@ export default function UploadWardrobePage() {
         />
       </motion.div>
 
-      {/* Controls */}
+      {/* Action Buttons */}
       <div className="flex gap-4 justify-center">
-        <PrimaryButton
-          onClick={uploadAll}
-          disabled={!items.some(i => i.status === 'pending')}
-        >
+        <PrimaryButton onClick={uploadAll} disabled={!items.some(i => i.status === 'pending')}>
           Upload All
         </PrimaryButton>
         <PrimaryButton onClick={() => setShowWebcam(true)}>
@@ -158,25 +153,28 @@ export default function UploadWardrobePage() {
         </PrimaryButton>
       </div>
 
-      {/* Previews */}
+      {/* Preview Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
         <AnimatePresence>
           {items.map(item => (
             <motion.div
               key={item.id}
               layout
-              initial={{ opacity: 0, scale: 0.9 }}
+              initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.8 }}
-              className="relative rounded-lg overflow-hidden shadow"
+              exit={{ opacity: 0 }}
+              className="relative rounded-lg overflow-hidden shadow-lg"
             >
-              <img
-                src={item.preview}
-                alt=""
-                className="w-full h-32 object-cover"
-              />
+              <div className="relative w-full h-32">
+                <Image
+                  src={item.preview}
+                  alt=""
+                  fill
+                  className="object-cover"
+                />
+              </div>
 
-              {/* delete */}
+              {/* remove from list */}
               <button
                 onClick={() => removeItem(item.id)}
                 className="absolute top-1 right-1 bg-white/80 rounded-full p-1"
@@ -184,7 +182,7 @@ export default function UploadWardrobePage() {
                 <X size={16} />
               </button>
 
-              {/* status */}
+              {/* statuses */}
               {item.status === 'uploading' && (
                 <div className="absolute inset-0 bg-white/70 flex items-center justify-center">
                   <div className="loader" />
@@ -223,17 +221,17 @@ export default function UploadWardrobePage() {
             exit={{ opacity: 0 }}
           >
             <motion.div
-              className="bg-white rounded-lg overflow-hidden p-4 max-w-xs w-full"
-              initial={{ y: -40 }}
-              animate={{ y: 0 }}
-              exit={{ y: -40 }}
+              className="bg-white rounded-xl p-4 max-w-sm w-full"
+              initial={{ y: -50, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: -50, opacity: 0 }}
               transition={{ type: 'spring', stiffness: 300 }}
             >
               <Webcam
                 audio={false}
                 ref={webcamRef}
                 screenshotFormat="image/jpeg"
-                className="w-full rounded"
+                className="w-full rounded-lg"
               />
               <div className="mt-4 flex justify-end gap-2">
                 <PrimaryButton onClick={capturePhoto}>Capture</PrimaryButton>
