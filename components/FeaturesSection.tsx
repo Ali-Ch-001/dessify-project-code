@@ -142,6 +142,7 @@ export const Card = ({ card, index, layout = false }: { card: Card; index: numbe
     onCardClose(index);
   };
 
+  
   useOutsideClick(containerRef, handleClose);
 
   return (
@@ -161,7 +162,7 @@ export const Card = ({ card, index, layout = false }: { card: Card; index: numbe
             >
               <button
                 onClick={handleClose}
-                className="absolute top-4 right-4 flex h-8 w-8 items-center justify-center rounded-full bg-[#000000] text-white"
+                className="absolute top-4 right-4 flex h-8 w-8 items-center justify-center rounded-full bg-[#29224F] text-white"
               >
                 <IconX className="h-4 w-4" />
               </button>
