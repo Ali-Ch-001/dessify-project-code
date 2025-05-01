@@ -129,7 +129,7 @@ export default function AboutPage() {
       >
         {/* Hero Section */}
         <section className="rounded-3xl border-2 border-[#29224F] p-12 lg:p-20 shadow-2xl bg-[#FAFAFC]">
-          <h1 className="text-6xl lg:text-7xl font-extrabold mb-6 leading-tight text-[#29224F] dark:text-[#A9BAEF]">
+          <h1 className="text-6xl lg:text-7xl font-extrabold mb-6 leading-tight text-[#29224F] dark:text-[#29224F]">
             About Dressify
           </h1>
           <p className="text-2xl text-[#29224F] leading-relaxed max-w-4xl">

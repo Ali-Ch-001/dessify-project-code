@@ -38,7 +38,6 @@ const FooterSection: React.FC = () => {
             <h3 className="text-lg font-semibold mb-4">SHOP</h3>
             <ul className="space-y-2 text-sm">
               <li><Link href="/products" className="hover:text-[#29224F]/80">Products</Link></li>
-              <li><Link href="/overview" className="hover:text-[#29224F]/80">Overview</Link></li>
               <li><Link href="/pricing" className="hover:text-[#29224F]/80">Pricing</Link></li>
               <li><Link href="/releases" className="hover:text-[#29224F]/80">Releases</Link></li>
             </ul>
@@ -101,7 +100,6 @@ const FooterSection: React.FC = () => {
             <h3 className="text-sm font-semibold mb-2">SHOP & COMPANY</h3>
             <ul className="space-y-1 text-xs">
               <li><Link href="/products" className="hover:text-[#29224F]/80">Products</Link></li>
-              <li><Link href="/overview" className="hover:text-[#29224F]/80">Overview</Link></li>
               <li><Link href="/pricing" className="hover:text-[#29224F]/80">Pricing</Link></li>
               <li><Link href="/releases" className="hover:text-[#29224F]/80">Releases</Link></li>
               <li><Link href="/about-us" className="hover:text-[#29224F]/80">About Us</Link></li>
@@ -135,7 +133,7 @@ const FooterSection: React.FC = () => {
       {/* Bottom Section */}
       <hr className="border-[#29224F]/50" />
       <div className="container mx-auto px-4 md:px-0 py-3 flex flex-col md:flex-row items-center justify-between space-y-2 md:space-y-0">
-        <p className="text-xs md:text-sm">&copy; 2023 Dressify. All rights reserved.</p>
+        <p className="text-xs md:text-sm">&copy; 2026 Dressify. All rights reserved.</p>
         <div className="flex space-x-2 text-xs md:text-sm">
           <Link href="/terms" className="hover:text-[#29224F]/80">Terms</Link>
           <Link href="/privacy" className="hover:text-[#29224F]/80">Privacy</Link>

@@ -70,9 +70,9 @@ export const DressifyCardsCarouselDemo: React.FC = () => {
   ));
 
   return (
-    <section className="w-full bg-white py-20">
+    <section className="w-full bg-white py-8">
       <div className="w-full overflow-hidden">
-        <h2 className="pl-4 sm:pl-6 text-5xl font-extrabold font-sans text-[#29224F] dark:text-[#A9BAEF] mb-8">
+        <h2 className="pl-4 sm:pl-6 text-5xl font-extrabold font-sans text-[#29224F] dark:text-[#29224F] mb-8">
           Why Choose Dressify?
         </h2>
         <Carousel items={cards} />
