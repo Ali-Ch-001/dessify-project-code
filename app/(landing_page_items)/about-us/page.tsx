@@ -26,7 +26,7 @@ export default function AboutPage() {
   return (
     <div className="min-h-screen bg-white text-[#29224F]">
       {/* Navbar */}
-      <div className="bg-[#8898CD]">
+      <div className="bg-[#A9BAEF] ">
         <motion.nav
           className="container mx-auto flex items-center justify-between py-4 px-4 md:px-0"
           initial="hidden"
