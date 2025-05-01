@@ -1,5 +1,3 @@
-"use client";
-
 import React from "react";
 import { motion } from "framer-motion";
 import { DraggableCardContainer, DraggableCardBody } from "@/components/ui/draggable-card";
@@ -18,7 +16,7 @@ const founders: Founder[] = [
   {
     title: "Ali Mohsin",
     description:
-      "Ali Mohsin is the visionary founder and chief AI architect. He blends leading edge AI Models to create hyper-realistic outfis and optimized our GPU pipelines for sub-50ms responses. He also leads our data science team. He is the one keeping the lights on.",
+      "Ali Mohsin is the visionary founder and chief AI architect. He blends leading edge AI Models to create hyper-realistic outfits and optimized our GPU pipelines for sub-50ms responses. He also leads our data science team. He is the one keeping the lights on.",
   },
   {
     title: "Fatima Ahmad",
@@ -26,6 +24,7 @@ const founders: Founder[] = [
       "Fatima Ahmad leads UX and design, turning user research into intuitive interfaces. Her redesign boosted mobile conversions by 25% and she ensures Dressify meets high accessibility standards.",
   },
 ];
+
 // Framer Motion variants
 const containerVariants = {
   hidden: {},
@@ -50,13 +49,17 @@ export default function Founders() {
       </h2>
 
       <motion.div
-        className="container mx-auto flex space-x-6 overflow-hidden px-4"
+        className="container mx-auto flex flex-col md:flex-row md:space-x-6 space-y-6 md:space-y-0 px-4"
         variants={containerVariants}
         initial="hidden"
         animate="show"
       >
         {founders.map((founder) => (
-          <motion.div key={founder.title} variants={cardVariants} className="flex-shrink-0 w-full md:w-1/3">
+          <motion.div
+            key={founder.title}
+            variants={cardVariants}
+            className="w-full md:w-1/3"
+          >
             <DraggableCardContainer>
               <DraggableCardBody className="p-1 rounded-3xl bg-gradient-to-r from-[#4B3F72] via-[#6D5BAA] to-[#A59DE0] cursor-grab">
                 <div className="bg-white rounded-2xl shadow-xl p-6 flex flex-row items-center">
