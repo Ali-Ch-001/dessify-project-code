@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import FooterSection from "@/components/FooterSection";
 
 const MotionLink = motion(Link);
@@ -16,6 +17,14 @@ const navLinks = [
 
 export default function ContactPage() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    if (searchParams.get("success") === "true") {
+      setShowSuccess(true);
+    }
+  }, [searchParams]);
 
   const navVariants = {
     hidden: { opacity: 0, y: -10 },
@@ -136,11 +145,35 @@ export default function ContactPage() {
           <h1 className="text-3xl sm:text-4xl font-extrabold mb-4 text-[#29224F]">
             Get in Touch
           </h1>
-          <p className="text-base sm:text-lg mb-6 text-[#29224F]">
+          <p className="text-base sm:text-lg mb-4 text-[#29224F]">
             Have questions or feedback? Fill out the form below and we’ll get back to you within 24 hours.
           </p>
 
-          <form className="space-y-4 sm:space-y-6">
+          {/* ✅ Green Success Message */}
+          {showSuccess && (
+            <div className="mb-4 p-3 text-green-700 bg-green-100 border border-green-300 rounded-lg">
+              ✅ Your message has been sent successfully!
+            </div>
+          )}
+
+          <form
+            action="https://formsubmit.co/nexium.enterprise@gmail.com"
+            method="POST"
+            className="space-y-4 sm:space-y-6"
+          >
+            <input type="hidden" name="_captcha" value="false" />
+            <input
+              type="hidden"
+              name="_next"
+              value={
+                process.env.NODE_ENV === "development"
+                  ? "http://localhost:3000/contact?success=true"
+                  : "https://dressify-sable.vercel.app/contact?success=true"
+              }
+            />
+
+
+
             <div>
               <label htmlFor="name" className="block text-sm font-medium mb-1">
                 Name
