@@ -1,4 +1,5 @@
 "use client";
+
 import { NextPage } from "next";
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -11,6 +12,12 @@ import FooterSection from "@/components/FooterSection";
 
 // Wrap Next.js Link with Framer Motion
 const MotionLink = motion(Link);
+const navLinks = [
+  { label: "Home", href: "/" },
+  { label: "Trial", href: "#info" },
+  { label: "Shop", href: "/products" },
+  { label: "Contact", href: "/contact" },
+];
 
 const LandingPage: NextPage = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -27,9 +34,6 @@ const LandingPage: NextPage = () => {
     visible: { opacity: 1, height: "auto", transition: { duration: 0.3 } },
   };
 
-  // Array of navigation links for reuse
-  const navLinks = ["Home", "Trial", "Shop", "Contact"];
-
   return (
     <div className="bg-[#A9BAEF] min-h-screen text-[#29224F]">
       {/* Navigation Bar */}
@@ -40,26 +44,27 @@ const LandingPage: NextPage = () => {
         variants={navVariants}
       >
         {/* Logo */}
-        <motion.div
+        <MotionLink
+          href="/"
           className="text-3xl font-bold"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
         >
           Dressify
-        </motion.div>
+        </MotionLink>
 
         {/* Desktop Navigation Links */}
         <div className="hidden md:flex space-x-8">
-          {navLinks.map((link, index) => (
-            <motion.a
-              key={link}
-              href="#"
+          {navLinks.map(({ label, href }, index) => (
+            <MotionLink
+              key={label}
+              href={href}
               className="text-lg hover:text-[#29224F] transition-colors"
               whileHover={{ scale: 1.05 }}
               transition={{ delay: index * 0.05 }}
             >
-              {link}
-            </motion.a>
+              {label}
+            </MotionLink>
           ))}
         </div>
 
@@ -67,8 +72,7 @@ const LandingPage: NextPage = () => {
         <div className="flex items-center">
           {/* Desktop Login Link */}
           <MotionLink
-            href="/sign-in"  // Updated route to "/sign-in"
-            passHref
+            href="/sign-in"
             className="bg-[#29224F] text-white px-5 py-2 rounded-md hover:bg-gray-800 transition-colors hidden md:block text-lg"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
@@ -107,20 +111,19 @@ const LandingPage: NextPage = () => {
             variants={mobileMenuVariants}
           >
             <div className="flex flex-col space-y-2 py-2">
-              {navLinks.map((link, index) => (
-                <motion.a
-                  key={link}
-                  href="#"
+              {navLinks.map(({ label, href }, idx) => (
+                <MotionLink
+                  key={label}
+                  href={href}
                   className="block text-lg hover:text-[#29224F] transition-colors"
                   whileHover={{ scale: 1.05 }}
-                  transition={{ delay: index * 0.05 }}
+                  transition={{ delay: idx * 0.05 }}
                 >
-                  {link}
-                </motion.a>
+                  {label}
+                </MotionLink>
               ))}
               <MotionLink
-                href="/sign-in" // Updated route to "/sign-in"
-                passHref
+                href="/sign-in"
                 className="block bg-[#29224F] text-white px-5 py-2 rounded-md text-center hover:bg-gray-800 transition-colors text-lg"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -134,13 +137,14 @@ const LandingPage: NextPage = () => {
 
       {/* Landing Page Sections */}
       <HeroSection />
-      <InfoSection />
+      {/* Trial Section Anchor */}
+      <div id="info">
+        <InfoSection />
+      </div>
       <TrendingSection />
       <ExclusiveOfferPage />
       <FooterSection />
-      {/* Add more sections here as needed */}
     </div>
   );
-};
-
+}
 export default LandingPage;

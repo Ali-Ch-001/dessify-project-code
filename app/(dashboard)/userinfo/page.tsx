@@ -1,12 +1,26 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { supabase } from "@/lib/supabaseClient";
 import { motion, AnimatePresence } from "framer-motion";
-import { X } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
+// Wrap the Button in a motion component for “jumpy” dropdown triggers
+const MotionButton = motion(Button);
 
 type Profile = {
   display_name: string | null;
@@ -30,13 +44,20 @@ export default function UserInfoPage() {
   const [saveError, setSaveError] = useState<string>("");
   const [profile, setProfile]     = useState<Profile | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
-  const [showModal, setShowModal] = useState(false);
+
+  // Extraction state
   const [extracting, setExtracting] = useState(false);
   const [extractError, setExtractError] = useState<string | null>(null);
-
   const FEATURE_URL = process.env.NEXT_PUBLIC_FEATURE_EXTRACTOR_URL!;
+  const extractInputRef = useRef<HTMLInputElement>(null);
 
-  const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<Profile>({
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    watch,
+    formState: { errors },
+  } = useForm<Profile>({
     defaultValues: {
       display_name: "",
       avatar_url:   "",
@@ -52,48 +73,31 @@ export default function UserInfoPage() {
     }
   });
 
-  // ─── Load existing profile ─────────────────────────
   useEffect(() => {
     (async () => {
-      // 1) Get the logged-in user
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         router.push("/login");
         return;
       }
-  
-      // 2) Fetch their profile row
       const { data: profileData } = await supabase
         .from("profiles")
         .select("*")
         .eq("id", user.id)
         .single();
-  
+
       if (profileData) {
-        // 3) Save to local state
         setProfile(profileData);
-  
-        // 4) Populate the form fields—only keys defined in Profile
         (Object.keys(profileData) as (keyof Profile)[]).forEach((key) => {
           const val = profileData[key];
-          if (val != null) {
-            setValue(key, val);
-          }
+          if (val != null) setValue(key, val);
         });
-  
-        // 5) Set the avatar preview if present
-        if (profileData.avatar_url) {
-          setAvatarPreview(profileData.avatar_url);
-        }
+        if (profileData.avatar_url) setAvatarPreview(profileData.avatar_url);
       }
-  
       setLoading(false);
     })();
   }, [router, setValue]);
-  
-  // ─── Avatar upload ────────────────────────────────
+
   async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -111,15 +115,14 @@ export default function UserInfoPage() {
       return;
     }
 
-    const urlResponse = supabase
+    const { data: { publicUrl } } = supabase
       .storage.from("avatars").getPublicUrl(up.path);
-    const publicUrl = urlResponse.data.publicUrl;
+
     setValue("avatar_url", publicUrl);
     setAvatarPreview(publicUrl);
     setSaving(false);
   }
 
-  // ─── AI feature extraction ─────────────────────────
   async function handleExtract(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -131,7 +134,7 @@ export default function UserInfoPage() {
       const res = await fetch(FEATURE_URL, { method: "POST", body: fd });
       if (!res.ok) throw new Error("Extraction failed");
       const feats: Partial<Record<keyof Profile, string>> = await res.json();
-  
+
       ([
         "gender",
         "body_type",
@@ -140,36 +143,27 @@ export default function UserInfoPage() {
         "eyeball_color",
         "glasses",
         "skin_tone",
-      ] as const).forEach((field) => {
+      ] as (keyof Profile)[]).forEach(field => {
         const raw = feats[field];
-        if (raw == null) return;
-        if (field === "glasses") {
-          // raw comes back as "Yes"/"No"
-          setValue("glasses", raw === "Yes");
-        } else {
-          setValue(field, raw);
-        }
+        if (!raw) return;
+        if (field === "glasses") setValue("glasses", raw === "Yes");
+        else setValue(field, raw);
       });
-  
-      setShowModal(false);
-    } catch (err: unknown) {
-      // Narrow down to Error to extract message, else stringify
-      if (err instanceof Error) {
-        setExtractError(err.message);
-      } else {
-        setExtractError(String(err));
-      }
+    } catch (err) {
+      setExtractError(err instanceof Error ? err.message : String(err));
     } finally {
       setExtracting(false);
+      if (extractInputRef.current) extractInputRef.current.value = "";
     }
-  }  
+  }
 
-  // ─── Form submission ──────────────────────────────
-  const onSubmit: SubmitHandler<Profile> = async (data) => {
+  const onSubmit: SubmitHandler<Profile> = async data => {
     setSaving(true);
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { router.push("/login"); return; }
-
+    if (!user) {
+      router.push("/login");
+      return;
+    }
     if (profile?.mobile) data.mobile = profile.mobile;
     if (profile?.dob)    data.dob    = profile.dob;
 
@@ -192,20 +186,20 @@ export default function UserInfoPage() {
 
   if (loading) return (
     <div className="flex items-center justify-center min-h-screen">
-      <p className="text-gray-800">Loading…</p>
+      <p className="text-[#29224F]">Loading…</p>
     </div>
   );
 
   return (
     <motion.div
-      initial={{ opacity:0 }} animate={{ opacity:1 }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
       className="max-w-3xl mx-auto p-6 space-y-8"
     >
-      {/* ─── Status banners ───────────────────────────── */}
       <AnimatePresence>
         {status === "success" && (
           <motion.div
-            className="p-3 mb-4 rounded bg-green-100 text-green-800"
+            className="p-3 mb-4 rounded-xl bg-green-100 text-green-800"
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
@@ -215,7 +209,7 @@ export default function UserInfoPage() {
         )}
         {status === "error" && (
           <motion.div
-            className="p-3 mb-4 rounded bg-red-100 text-red-800"
+            className="p-3 mb-4 rounded-xl bg-red-100 text-red-800"
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
@@ -225,178 +219,273 @@ export default function UserInfoPage() {
         )}
       </AnimatePresence>
 
-      <h1 className="text-3xl font-bold text-center text-gray-800">Edit Your Profile</h1>
+      <h1 className="text-3xl font-bold text-center text-[#29224F]">
+        Edit Your Profile
+      </h1>
 
-      {/* ─── Section 1: Your Information ─────────────── */}
+      {/* Profile Card */}
       <motion.section
-        initial={{ x:-50, opacity:0 }} animate={{ x:0, opacity:1 }}
-        transition={{ duration:0.4 }}
-        className="bg-white p-6 rounded-xl shadow"
+        initial={{ x: -50, opacity: 0 }}
+        animate={{ x: 0, opacity: 1 }}
+        transition={{ duration: 0.4 }}
+        className="bg-gradient-to-br from-[#A9BAEF] to-[#8AA4D3] p-6 rounded-2xl shadow-lg"
       >
-        <h2 className="text-2xl font-semibold mb-4 text-gray-800">Your Information</h2>
-        <form className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Display Name */}
-          <div>
-            <label className="block mb-1 font-medium text-gray-800">Display Name</label>
+        <h2 className="text-2xl font-semibold mb-6 text-white text-center">
+          Your Information
+        </h2>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          <motion.div
+            initial={{ y: -10 }}
+            animate={{ y: 0 }}
+            whileHover={{ scale: 1.02 }}
+            transition={{ type: "spring", stiffness: 300 }}
+          >
+            <label className="block mb-2 font-medium text-white text-lg">
+              Display Name
+            </label>
             <input
               {...register("display_name", { required: "Name required" })}
-              className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-400 text-gray-900"
+              className="w-full border border-white bg-white bg-opacity-10 rounded-xl px-4 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-white transition"
             />
             {errors.display_name && (
-              <p className="text-red-600 text-sm mt-1">{errors.display_name.message}</p>
+              <p className="text-red-200 text-sm mt-1">
+                {errors.display_name.message}
+              </p>
             )}
-          </div>
-          {/* DOB */}
-          <div>
-            <label className="block mb-1 font-medium text-gray-800">Date of Birth</label>
-            <input
-              type="date"
-              {...register("dob", { required: !profile?.dob })}
-              disabled={!!profile?.dob}
-              className={`w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-400 text-gray-900 ${profile?.dob?"bg-gray-100":""}`}
-            />
-          </div>
-          {/* Mobile */}
-          <div>
-            <label className="block mb-1 font-medium text-gray-800">Mobile Number</label>
-            <input
-              type="tel"
-              {...register("mobile", { required: !profile?.mobile })}
-              disabled={!!profile?.mobile}
-              className={`w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-400 text-gray-900 ${profile?.mobile?"bg-gray-100":""}`}
-            />
-          </div>
-          {/* Avatar */}
-          <div>
-            <label className="block mb-1 font-medium text-gray-800">Profile Picture</label>
-            <div className="flex items-center gap-4">
-            <div className="relative w-40 sm:w-32 md:w-40 aspect-square rounded-full overflow-hidden bg-gray-100">
-                {avatarPreview ? (
-                  <Image
-                    src={avatarPreview}
-                    alt="avatar"
-                    fill
-                    className="object-cover"
-                  />
-                ) : (
-                  <div className="flex items-center justify-center text-gray-400 w-full h-full">
-                    No pic
-                  </div>
-                )}
-              </div>
+          </motion.div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <motion.div
+              initial={{ y: -10 }}
+              animate={{ y: 0 }}
+              whileHover={{ scale: 1.02 }}
+              transition={{ type: "spring", stiffness: 300 }}
+            >
+              <label className="block mb-2 font-medium text-white text-lg">
+                Date of Birth
+              </label>
               <input
-                type="file"
-                accept="image/*"
-                onChange={handleAvatarChange}
-                disabled={saving}
-                className="text-gray-800"
+                type="date"
+                {...register("dob", { required: !profile?.dob })}
+                disabled={!!profile?.dob}
+                className="w-full border border-white bg-white bg-opacity-10 rounded-xl px-4 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-white transition disabled:opacity-50"
               />
-            </div>
+            </motion.div>
+            <motion.div
+              initial={{ y: -10 }}
+              animate={{ y: 0 }}
+              whileHover={{ scale: 1.02 }}
+              transition={{ type: "spring", stiffness: 300 }}
+            >
+              <label className="block mb-2 font-medium text-white text-lg">
+                Mobile Number
+              </label>
+              <input
+                type="tel"
+                {...register("mobile", { required: !profile?.mobile })}
+                disabled={!!profile?.mobile}
+                className="w-full border border-white bg-white bg-opacity-10 rounded-xl px-4 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-white transition disabled:opacity-50"
+              />
+            </motion.div>
           </div>
+
+          <motion.div
+            initial={{ y: -10 }}
+            animate={{ y: 0 }}
+            whileHover={{ scale: 1.02 }}
+            transition={{ type: "spring", stiffness: 300 }}
+            className="flex flex-col items-center"
+          >
+            <label
+              htmlFor="avatarInput"
+              className="relative w-32 h-32 rounded-full overflow-hidden bg-gray-100 shadow-inner cursor-pointer"
+            >
+              {avatarPreview ? (
+                <Image
+                  src={avatarPreview}
+                  alt="avatar"
+                  fill
+                  className="object-cover"
+                />
+              ) : (
+                <div className="flex items-center justify-center text-gray-400 w-full h-full">
+                  No pic
+                </div>
+              )}
+            </label>
+
+            <input
+              id="avatarInput"
+              type="file"
+              accept="image/*"
+              onChange={handleAvatarChange}
+              disabled={saving}
+              className="hidden"
+            />
+
+            <p className="mt-3 text-white text-base">Profile Picture</p>
+          </motion.div>
+
+          <button
+            type="submit"
+            disabled={saving}
+            className="w-full mt-6 px-6 py-3 bg-white text-[#29224F] rounded-xl hover:opacity-90 transition text-lg font-semibold"
+          >
+            {saving ? "Saving…" : "Save Profile"}
+          </button>
         </form>
       </motion.section>
 
-      {/* ─── Section 2: AI-Extracted Features ─────────── */}
+      {/* AI-Extracted Features */}
       <motion.section
-        initial={{ x:50, opacity:0 }} animate={{ x:0, opacity:1 }}
-        transition={{ duration:0.4, delay:0.2 }}
-        className="bg-white p-6 rounded-xl shadow space-y-4"
+        initial={{ x: 50, opacity: 0 }}
+        animate={{ x: 0, opacity: 1 }}
+        transition={{ duration: 0.4, delay: 0.2 }}
+        className="bg-gradient-to-br from-[#A9BAEF] to-[#8AA4D3] p-6 rounded-2xl shadow-lg space-y-6"
       >
         <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-semibold text-gray-800">AI-Extracted Features</h2>
-          <button
-            onClick={() => setShowModal(true)}
-            className="px-3 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition"
+          <h2 className="text-2xl font-semibold text-white">
+            AI-Extracted Features
+          </h2>
+          <MotionButton
+            initial={{ scale: 0.8 }}
+            animate={{ scale: 1 }}
+            whileHover={{ scale: 1.05, y: -2 }}
+            whileTap={{ scale: 0.95 }}
+            transition={{ type: "spring", stiffness: 300, damping: 20 }}
+            onClick={() => extractInputRef.current?.click()}
+            className="px-4 py-2 bg-white text-[#29224F] rounded-xl text-base hover:bg-white hover:text-[#29224F]"
           >
             Extract Automatically
-          </button>
+          </MotionButton>
+
         </div>
-        <form className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+        <input
+          ref={extractInputRef}
+          type="file"
+          accept="image/*"
+          onChange={handleExtract}
+          disabled={extracting}
+          className="hidden"
+        />
+
+        {extracting && <p className="text-white">Extracting…</p>}
+        {extractError && <p className="text-red-200">{extractError}</p>}
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {[
-            { name:"gender", label:"Gender", opts:["man","woman"] },
-            { name:"body_type", label:"Body Type", opts:["slim","moderate","heavyset"] },
-            { name:"hair_type", label:"Hair Type", opts:["bald","short","normal","long"] },
-            { name:"hair_color", label:"Hair Color", opts:["blonde","brown","black","red"] },
-            { name:"eyeball_color", label:"Eyeball Color", opts:["blue","brown","green","hazel"] },
-          ].map(({ name, label, opts }) => (
-            <div key={name}>
-              <label className="block mb-1 font-medium text-gray-800">{label}</label>
-              <select
-                {...register(name as keyof Profile, { required: true })}
-                className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-400 text-gray-900"
-              >
-                <option value="">Select…</option>
-                {opts.map(o=> <option key={o} value={o}>{o}</option>)}
-              </select>
-            </div>
-          ))}
-          {/* Glasses */}
-          <div>
-            <label className="block mb-1 font-medium text-gray-800">Glasses</label>
-            <select
-              {...register("glasses", { required:true })}
-              className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-400 text-gray-900"
-            >
-              <option value="">Select…</option>
-              <option value="true">Yes</option>
-              <option value="false">No</option>
-            </select>
+            { name: "gender",        label: "Gender",    opts: ["man","woman"] },
+            { name: "body_type",     label: "Body Type", opts: ["slim","moderate","heavyset"] },
+            { name: "hair_type",     label: "Hair Type", opts: ["bald","short","normal","long"] },
+            { name: "hair_color",    label: "Hair Color",opts: ["blonde","brown","black","red"] },
+            { name: "eyeball_color", label: "Eye Color", opts: ["blue","brown","green","hazel"] },
+          ].map(({ name, label, opts }) => {
+            const val = watch(name as any) || "";
+            return (
+              <div key={name} className="space-y-2">
+                <label className="block mb-1 font-medium text-white text-lg">
+                  {label}
+                </label>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <MotionButton
+                      variant="outline"
+                      className="w-full justify-between"
+                      initial={{ scale: 1 }}
+                      whileHover={{ scale: 1.05, y: -2 }}
+                      whileTap={{ scale: 0.95 }}
+                      transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                    >
+                      {val || `Select ${label}`}
+                    </MotionButton>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-full">
+                    <DropdownMenuLabel>{label}</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuRadioGroup
+                      value={val}
+                      onValueChange={(v) => setValue(name as any, v)}
+                    >
+                      {opts.map(o => (
+                        <DropdownMenuRadioItem key={o} value={o}>
+                          {o}
+                        </DropdownMenuRadioItem>
+                      ))}
+                    </DropdownMenuRadioGroup>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            );
+          })}
+
+          <div className="space-y-2">
+            <label className="block mb-1 font-medium text-white text-lg">
+              Glasses
+            </label>
+            {(() => {
+              const boolVal = watch("glasses");
+              const strVal = boolVal === null ? "" : boolVal ? "true" : "false";
+              return (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <MotionButton
+                      variant="outline"
+                      className="w-full justify-between"
+                      initial={{ scale: 1 }}
+                      whileHover={{ scale: 1.05, y: -2 }}
+                      whileTap={{ scale: 0.95 }}
+                      transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                    >
+                      {boolVal === null ? "Select Glasses" : boolVal ? "Yes" : "No"}
+                    </MotionButton>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-full">
+                    <DropdownMenuLabel>Glasses</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuRadioGroup
+                      value={strVal}
+                      onValueChange={v => setValue("glasses", v === "true")}
+                    >
+                      <DropdownMenuRadioItem value="true">Yes</DropdownMenuRadioItem>
+                      <DropdownMenuRadioItem value="false">No</DropdownMenuRadioItem>
+                    </DropdownMenuRadioGroup>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              );
+            })()}
           </div>
-          {/* Skin Tone */}
-          <div className="md:col-span-2">
-            <label className="block mb-1 font-medium text-gray-800">Skin Tone (RGB)</label>
-            <div className="flex items-center gap-3">
+
+          <div className="space-y-2 md:col-span-2">
+            <label className="block mb-1 font-medium text-white text-lg">
+              Skin Tone (RGB)
+            </label>
+            <div className="flex items-center gap-4">
               <input
                 {...register("skin_tone")}
                 disabled
-                className="w-full border rounded-lg px-3 py-2 bg-gray-100 text-gray-900 focus:ring-2 focus:ring-indigo-400"
+                className="flex-1 bg-white border border-gray-300 rounded-md px-3 py-2 text-gray-800 text-base shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition disabled:opacity-60"
               />
-              <span
-                className="w-6 h-6 border rounded-full"
-                style={{ backgroundColor: `rgb(${watch("skin_tone")})` }}
+              <motion.span
+                initial={{ scale: 0.8 }}
+                animate={{ scale: 1 }}
+                whileHover={{ scale: 1.05, y: -2 }}
+                transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                className="w-12 h-12 border border-gray-300 rounded-full shadow-inner"
+                style={{ backgroundColor: `rgb(${watch("skin_tone") || "255,255,255"})` }}
               />
             </div>
           </div>
-          {/* Save */}
-          <div className="md:col-span-2 text-right">
-            <button
-              onClick={handleSubmit(onSubmit)}
-              disabled={saving}
-              className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
-            >
-              {saving ? "Saving…" : "Save Profile"}
-            </button>
-          </div>
-        </form>
-      </motion.section>
+        </div>
 
-      {/* ─── Extraction Modal ────────────────────────── */}
-      <AnimatePresence>
-        {showModal && (
-          <motion.div
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-            initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
-          >
-            <motion.div
-              className="bg-white p-6 rounded-xl shadow-2xl w-full max-w-sm"
-              initial={{ y:-30, opacity:0 }} animate={{ y:0, opacity:1 }} exit={{ y:-30, opacity:0 }}
-            >
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold text-gray-800">Upload to Extract</h3>
-                <button onClick={() => setShowModal(false)}><X size={18} className="text-gray-800"/></button>
-              </div>
-              <input
-                type="file" accept="image/*"
-                onChange={handleExtract}
-                disabled={extracting}
-                className="block w-full text-sm text-gray-800 mb-2"
-              />
-              {extracting && <p className="text-gray-700">Extracting…</p>}
-              {extractError && <p className="text-red-600">{extractError}</p>}
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+        <button
+          onClick={handleSubmit(onSubmit)}
+          disabled={saving}
+          className="w-full mt-6 px-6 py-3 bg-white text-[#29224F] rounded-xl text-lg font-semibold"
+        >
+          {saving ? "Saving…" : "Save Profile"}
+        </button>
+      </motion.section>
     </motion.div>
   );
 }
