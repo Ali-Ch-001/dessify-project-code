@@ -6,7 +6,13 @@ import Link from "next/link";
 import FooterSection from "@/components/FooterSection";
 
 const MotionLink = motion(Link);
-const navLinks = ["Home", "Trial", "Shop", "Contact"];
+
+const navLinks = [
+  { label: "Home", href: "/" },
+  { label: "Trial", href: "/#info" },
+  { label: "Shop", href: "/product" },
+  { label: "Contact", href: "/contact" },
+];
 
 export default function ContactPage() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -41,14 +47,14 @@ export default function ContactPage() {
 
           <div className="hidden md:flex space-x-8">
             {navLinks.map((link, i) => (
-              <motion.a
-                key={link}
-                href={link === "Home" ? "/" : `/${link.toLowerCase()}`}
+              <MotionLink
+                key={link.label}
+                href={link.href}
                 className="text-lg text-[#29224F] hover:underline"
                 transition={{ delay: i * 0.05 }}
               >
-                {link}
-              </motion.a>
+                {link.label}
+              </MotionLink>
             ))}
           </div>
 
@@ -95,14 +101,14 @@ export default function ContactPage() {
             >
               <div className="flex flex-col space-y-2 py-2">
                 {navLinks.map((link, i) => (
-                  <motion.a
-                    key={link}
-                    href={link === "Home" ? "/" : `/${link.toLowerCase()}`}
+                  <MotionLink
+                    key={link.label}
+                    href={link.href}
                     className="block text-lg text-[#29224F] hover:underline"
                     transition={{ delay: i * 0.05 }}
                   >
-                    {link}
-                  </motion.a>
+                    {link.label}
+                  </MotionLink>
                 ))}
                 <MotionLink
                   href="/sign-in"

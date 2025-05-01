@@ -10,7 +10,7 @@ const MotionLink = motion(Link);
 export default function SupportPage() {
   const navLinks = [
     { label: "Home", href: "/" },
-    { label: "Trial", href: "/trial" },
+    { label: "Trial", href: "/#info" },
     { label: "Shop", href: "/products" },
     { label: "Contact", href: "/contact" },
   ];

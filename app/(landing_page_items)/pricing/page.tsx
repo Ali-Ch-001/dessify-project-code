@@ -35,7 +35,12 @@ const plans = [
   },
 ];
 
-const navLinks = ['Home', 'Pricing', 'Shop', 'Contact'];
+const navLinks = [
+  { label: 'Home', href: '/' },
+  { label: 'Pricing', href: '/pricing' },
+  { label: 'Shop', href: '/product' },
+  { label: 'Contact', href: '/contact' },
+];
 
 export default function PricingPage() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -51,13 +56,13 @@ export default function PricingPage() {
         <div className="container mx-auto flex items-center justify-between py-4 px-6">
           <motion.div className="text-2xl font-extrabold text-[#29224F]">Dressify</motion.div>
           <div className="hidden md:flex space-x-8">
-            {navLinks.map((link) => (
+            {navLinks.map(({ label, href }) => (
               <Link
-                key={link}
-                href={link === 'Home' ? '/' : `/${link.toLowerCase()}`}
+                key={label}
+                href={href}
                 className="text-lg font-medium text-[#29224F] hover:opacity-90"
               >
-                {link}
+                {label}
               </Link>
             ))}
           </div>
@@ -100,13 +105,13 @@ export default function PricingPage() {
             transition={{ duration: 0.3 }}
           >
             <div className="px-6 py-4 space-y-3">
-              {navLinks.map((link) => (
+              {navLinks.map(({ label, href }) => (
                 <Link
-                  key={link}
-                  href={link === 'Home' ? '/' : `/${link.toLowerCase()}`}
+                  key={label}
+                  href={href}
                   className="block text-white text-lg hover:opacity-90"
                 >
-                  {link}
+                  {label}
                 </Link>
               ))}
               <Link
@@ -140,7 +145,8 @@ export default function PricingPage() {
               key={plan.key}
               className={`flex flex-col rounded-2xl border ${
                 plan.featured
-                  ? 'border-[#29224F] bg-white shadow-lg' : 'border-gray-200 bg-white'
+                  ? 'border-[#29224F] bg-white shadow-lg'
+                  : 'border-gray-200 bg-white'
               }`}
             >
               <div className="p-8 flex-grow flex flex-col">

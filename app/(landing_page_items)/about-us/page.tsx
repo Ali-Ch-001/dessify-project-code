@@ -8,7 +8,13 @@ import { DressifyCardsCarouselDemo } from "@/components/ui/FeaturesDemo";
 import Founders from "@/components/Founders";
 
 const MotionLink = motion(Link);
-const navLinks = ["Home", "Trial", "Shop", "Contact"];
+
+const navLinks = [
+  { label: "Home", href: "/" },
+  { label: "Trial", href: "/#info" },
+  { label: "Shop", href: "/product" },
+  { label: "Contact", href: "/contact" },
+];
 
 export default function AboutPage() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -26,7 +32,7 @@ export default function AboutPage() {
   return (
     <div className="min-h-screen bg-white text-[#29224F]">
       {/* Navbar */}
-      <div className="bg-[#A9BAEF] ">
+      <div className="bg-[#A9BAEF]">
         <motion.nav
           className="container mx-auto flex items-center justify-between py-4 px-4 md:px-0"
           initial="hidden"
@@ -42,15 +48,15 @@ export default function AboutPage() {
           </MotionLink>
 
           <div className="hidden md:flex space-x-8">
-            {navLinks.map((link, i) => (
-              <motion.a
-                key={link}
-                href={link === "Home" ? "/" : `/${link.toLowerCase()}`}
+            {navLinks.map(({ label, href }, i) => (
+              <MotionLink
+                key={label}
+                href={href}
                 className="text-lg text-[#29224F] hover:underline"
                 transition={{ delay: i * 0.05 }}
               >
-                {link}
-              </motion.a>
+                {label}
+              </MotionLink>
             ))}
           </div>
 
@@ -96,15 +102,15 @@ export default function AboutPage() {
               variants={mobileMenuVariants}
             >
               <div className="flex flex-col space-y-2 py-2">
-                {navLinks.map((link, i) => (
-                  <motion.a
-                    key={link}
-                    href={link === "Home" ? "/" : `/${link.toLowerCase()}`}
+                {navLinks.map(({ label, href }, i) => (
+                  <MotionLink
+                    key={label}
+                    href={href}
                     className="block text-lg text-[#29224F] hover:underline"
                     transition={{ delay: i * 0.05 }}
                   >
-                    {link}
-                  </motion.a>
+                    {label}
+                  </MotionLink>
                 ))}
                 <MotionLink
                   href="/sign-in"
@@ -129,7 +135,7 @@ export default function AboutPage() {
       >
         {/* Hero Section */}
         <section className="rounded-3xl border-2 border-[#29224F] p-12 lg:p-20 shadow-2xl bg-[#FAFAFC]">
-          <h1 className="text-6xl lg:text-7xl font-extrabold mb-6 leading-tight text-[#29224F] dark:text-[#29224F]">
+          <h1 className="text-6xl lg:text-7xl font-extrabold mb-6 leading-tight text-[#29224F]">
             About Dressify
           </h1>
           <p className="text-2xl text-[#29224F] leading-relaxed max-w-4xl">
@@ -149,7 +155,6 @@ export default function AboutPage() {
 
         {/* Meet the Founders */}
         <Founders />
-     
       </motion.main>
 
       {/* Footer */}
