@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
 import FooterSection from "@/components/FooterSection";
 
 const MotionLink = motion(Link);
@@ -40,10 +40,12 @@ function ContactForm() {
         className="space-y-4 sm:space-y-6"
       >
         <input type="hidden" name="_captcha" value="false" />
+
+        {/** Use the correct NEXT_PUBLIC_SITE_URL and append success flag **/}
         <input
           type="hidden"
           name="_next"
-          value={process.env.NEXT_PUBLIC_FORMSUBMIT_NEXT_LIVE}
+          value={`${process.env.NEXT_PUBLIC_SITE_URL}/contact?success=true`}
         />
 
         <div>
@@ -231,7 +233,8 @@ export default function ContactPage() {
             Get in Touch
           </h1>
           <p className="text-base sm:text-lg mb-4 text-[#29224F]">
-            Have questions or feedback? Fill out the form below and we&apos;ll get back to you within 24 hours.
+            Have questions or feedback? Fill out the form below and we&apos;ll
+            get back to you within 24 hours.
           </p>
 
           <Suspense fallback={<div>Loading form...</div>}>
@@ -243,7 +246,9 @@ export default function ContactPage() {
             <div>
               <h3 className="text-lg font-semibold mb-1">Address</h3>
               <p className="text-sm">
-                123 Fashion Avenue<br />Lahore, Pakistan 54000
+                123 Fashion Avenue
+                <br />
+                Lahore, Pakistan 54000
               </p>
             </div>
             <div>
