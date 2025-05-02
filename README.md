@@ -147,12 +147,6 @@ In modern life, choosing what to wear is often stressful and time-consuming. Dre
 
 ---
 
-## Architecture & Design
-
-### System Architecture Diagram
-
-![System Architecture](./docs/system-architecture.png)
-
 ### Component Breakdown
 
 1. **Frontend (Next.js)**
@@ -160,28 +154,6 @@ In modern life, choosing what to wear is often stressful and time-consuming. Dre
 3. **AI Microservices (Python, TensorFlow, PyTorch)**
 4. **Database (PostgreSQL via Supabase)**
 5. **Storage (Supabase Storage / AWS S3)**
-
-### Data Flow
-
-```mermaid
-sequenceDiagram
-    participant U as User
-    participant F as Frontend (Next.js)
-    participant A as API Server
-    participant D as Database
-    participant AI as AI Service
-    U->>F: Login Request
-    F->>A: POST /auth/login
-    A->>D: Verify Credentials
-    D-->>A: JWT Token
-    A-->>F: Return JWT
-    U->>F: Upload Item
-    F->>A: POST /items
-    A->>AI: send image for classification
-    AI-->>A: Category & Tags
-    A->>D: Save Item & Metadata
-    D-->>A: Success
-    A-->>F: Display New Item
 
 
 ## Getting Started
@@ -215,14 +187,70 @@ pip install -r requirements.txt
 2. Populate variables:
 
    ```ini
-   # Frontend (.env.local)
-   NEXT_PUBLIC_SUPABASE_URL=...
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=...
-   AI_SERVICE_URL=http://localhost:8000/predict
+      ########################################
+      # Frontend (.env.local)
+      ########################################
+      
+      # Supabase configuration
+      NEXT_PUBLIC_SUPABASE_URL=https://xyzabc.supabase.co
+      NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+      SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...   # Keep secret; server-only
+      
+      # API endpoints
+      NEXT_PUBLIC_API_BASE_URL=https://api.dressify.app         # your production API
+      NEXT_PUBLIC_AI_SERVICE_URL=http://localhost:8000/predict  # AI microservice
+      
+      # Authentication / Cookies
+      NEXTAUTH_SECRET=super-long-random-string-for-JWT-signing
+      NEXTAUTH_URL=http://localhost:3000                         # your frontend base URL
+      COOKIE_NAME=next-auth.session-token
+      
+      # Feature flags
+      NEXT_PUBLIC_ENABLE_BETA_OUTFITS=true
+      NEXT_PUBLIC_ENABLE_ANALYTICS=false
+      
+      # Third-party integrations
+      NEXT_PUBLIC_GOOGLE_CLIENT_ID=123-abc.apps.googleusercontent.com
+      NEXT_PUBLIC_GOOGLE_ANALYTICS_ID=G-XXXXXX
+      NEXT_PUBLIC_SENTRY_DSN=https://abcd1234@sentry.io/567890
+      
+      ########################################
+      # AI Service (.env.local)
+      ########################################
+      
+      # Model configuration
+      MODEL_PATH=./models/ensemble_model.pth
+      MODEL_DEVICE=cuda:0                # or "cpu"
+      BATCH_SIZE=16
+      CONFIDENCE_THRESHOLD=0.75          # Minimum probability for a tag suggestion
+      
+      # Server settings
+      HOST=0.0.0.0
+      PORT=8000
+      
+      # Logging
+      LOG_LEVEL=DEBUG                    # DEBUG | INFO | WARNING | ERROR | CRITICAL
+      LOG_FILE=logs/ai_service.log
+      
+      # Database (if AI service logs or stores metrics)
+      AI_DB_URL=postgresql://user:password@localhost:5432/ai_metrics
+      AI_DB_POOL_SIZE=10
+      
+      # Optional monitoring
+      PROMETHEUS_ENABLED=true
+      PROMETHEUS_PORT=8001
+      
+      # Security / Auth for AI
+      AI_API_KEY=replace-with-your-secure-key    # used in header X-API-KEY
+      
+      # Cache / Temp storage
+      CACHE_BACKEND=redis://localhost:6379/0
+      CACHE_TTL_SECONDS=3600
+      
+      # Misc
+      MAX_IMAGE_SIZE_MB=5                       # Reject uploads larger than this
+      TEMP_UPLOAD_DIR=/tmp/dressify_uploads
 
-   # AI Service (.env.local)
-   MODEL_PATH=./models/ensemble_model.pth
-   LOG_LEVEL=DEBUG
    ```
 
 ### Running Locally
