@@ -15,7 +15,7 @@ const MotionLink = motion(Link);
 const navLinks = [
   { label: "Home", href: "/" },
   { label: "Trial", href: "#info" },
-  { label: "Shop", href: "/products" },
+  { label: "Shop", href: "#shop" },
   { label: "Contact", href: "/contact" },
 ];
 
@@ -118,6 +118,7 @@ const LandingPage: NextPage = () => {
                   className="block text-lg hover:text-[#29224F] transition-colors"
                   whileHover={{ scale: 1.05 }}
                   transition={{ delay: idx * 0.05 }}
+                  onClick={() => setIsMobileMenuOpen(false)} // Close menu after click
                 >
                   {label}
                 </MotionLink>
@@ -137,14 +138,21 @@ const LandingPage: NextPage = () => {
 
       {/* Landing Page Sections */}
       <HeroSection />
+
       {/* Trial Section Anchor */}
       <div id="info">
         <InfoSection />
       </div>
-      <TrendingSection />
+
+      {/* Shop Scroll Target */}
+      <div id="shop">
+        <TrendingSection />
+      </div>
+
       <ExclusiveOfferPage />
       <FooterSection />
     </div>
   );
-}
+};
+
 export default LandingPage;

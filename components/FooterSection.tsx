@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { FiFacebook, FiTwitter, FiInstagram } from "react-icons/fi";
@@ -12,29 +12,25 @@ const socialLinks = [
 ];
 
 const footerNav = [
-  { heading: "SHOP", links: [
+  {
+    heading: "SHOP",
+    links: [
       { label: "Products", href: "/products" },
-      { label: "Pricing", href: "/pricing" }
-    ]
+      { label: "Pricing", href: "/pricing" },
+    ],
   },
-  { heading: "COMPANY", links: [
+  {
+    heading: "COMPANY",
+    links: [
       { label: "About Us", href: "/about-us" },
       { label: "Contact", href: "/contact" },
       { label: "News", href: "/news" },
       { label: "Support", href: "/support" },
-    ]
-  }
+    ],
+  },
 ];
 
 const FooterSection: React.FC = () => {
-  const [email, setEmail] = useState("");
-  const handleSubscribe = (e: React.FormEvent) => {
-    e.preventDefault();
-    // TODO: hook up to API
-    alert(`Subscribed ${email}`);
-    setEmail("");
-  };
-
   return (
     <motion.footer
       className="bg-[#A9BAEF] text-[#29224F]"
@@ -75,16 +71,28 @@ const FooterSection: React.FC = () => {
         {/* Newsletter */}
         <div className="text-center md:text-left">
           <h3 className="text-lg font-semibold mb-4">STAY UP TO DATE</h3>
-          <form onSubmit={handleSubscribe} className="flex flex-col sm:flex-row items-center gap-2">
+          <form
+              action={`https://formsubmit.co/${process.env.NEXT_PUBLIC_FORMSUBMIT_EMAIL}`}
+              method="POST"
+              className="flex flex-col sm:flex-row items-center gap-2"
+            >
+              <input type="hidden" name="_captcha" value="false" />
+              <input
+                type="hidden"
+                name="_next"
+                value={process.env.NEXT_PUBLIC_FORMSUBMIT_SUBSCRIBE_NEXT_LIVE}
+              />
             <input
               type="email"
+              name="email"
               placeholder="Your email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
               required
               className="w-full border border-[#29224F] px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-[#29224F] text-black text-sm"
             />
-            <button type="submit" className="bg-[#29224F] text-white px-6 py-2 rounded-md hover:bg-[#4B3F72] transition-colors text-sm">
+            <button
+              type="submit"
+              className="bg-[#29224F] text-white px-6 py-2 rounded-md hover:bg-[#4B3F72] transition-colors text-sm"
+            >
               SUBMIT
             </button>
           </form>
@@ -95,8 +103,12 @@ const FooterSection: React.FC = () => {
         <div className="container mx-auto px-4 py-4 flex flex-col md:flex-row items-center justify-between text-xs">
           <p>&copy; {new Date().getFullYear()} Dressify. All rights reserved.</p>
           <div className="flex space-x-4 mt-2 md:mt-0">
-            <Link href="/terms" className="hover:text-opacity-80">Terms & Conditions</Link>
-            <Link href="/privacy" className="hover:text-opacity-80">Privacy Policy</Link>
+            <Link href="/terms" className="hover:text-opacity-80">
+              Terms & Conditions
+            </Link>
+            <Link href="/privacy" className="hover:text-opacity-80">
+              Privacy Policy
+            </Link>
           </div>
         </div>
       </div>
