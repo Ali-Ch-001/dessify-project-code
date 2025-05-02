@@ -72,20 +72,16 @@ const FooterSection: React.FC = () => {
         <div className="text-center md:text-left">
           <h3 className="text-lg font-semibold mb-4">STAY UP TO DATE</h3>
           <form
-            action="https://formsubmit.co/nexium.enterprise@gmail.com"
-            method="POST"
-            className="flex flex-col sm:flex-row items-center gap-2"
-          >
-            <input type="hidden" name="_captcha" value="false" />
-            <input
-              type="hidden"
-              name="_next"
-              value={
-                process.env.NODE_ENV === "development"
-                  ? "http://localhost:3000/?subscribed=true"
-                  : "https://dressify-sable.vercel.app/?subscribed=true"
-              }
-            />
+              action={`https://formsubmit.co/${process.env.NEXT_PUBLIC_FORMSUBMIT_EMAIL}`}
+              method="POST"
+              className="flex flex-col sm:flex-row items-center gap-2"
+            >
+              <input type="hidden" name="_captcha" value="false" />
+              <input
+                type="hidden"
+                name="_next"
+                value={process.env.NEXT_PUBLIC_FORMSUBMIT_SUBSCRIBE_NEXT_LIVE}
+              />
             <input
               type="email"
               name="email"

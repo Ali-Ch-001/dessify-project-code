@@ -156,21 +156,19 @@ export default function ContactPage() {
             </div>
           )}
 
-          <form
-            action="https://formsubmit.co/nexium.enterprise@gmail.com"
-            method="POST"
-            className="space-y-4 sm:space-y-6"
-          >
-            <input type="hidden" name="_captcha" value="false" />
-            <input
-              type="hidden"
-              name="_next"
-              value={
-                process.env.NODE_ENV === "development"
-                  ? "http://localhost:3000/contact?success=true"
-                  : "https://dressify-sable.vercel.app/contact?success=true"
-              }
-            />
+            <form
+              action={`https://formsubmit.co/${process.env.NEXT_PUBLIC_FORMSUBMIT_EMAIL}`}
+              method="POST"
+              className="space-y-4 sm:space-y-6"
+            >
+              <input type="hidden" name="_captcha" value="false" />
+              <input
+                type="hidden"
+                name="_next"
+                value={process.env.NEXT_PUBLIC_FORMSUBMIT_NEXT_LIVE}
+              />
+
+
 
 
 
