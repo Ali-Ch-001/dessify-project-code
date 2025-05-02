@@ -183,6 +183,7 @@ sequenceDiagram
     D-->>A: Success
     A-->>F: Display New Item
 
+
 ## Getting Started
 
 ### Prerequisites
@@ -238,8 +239,6 @@ uvicorn main:app --reload --host 0.0.0.0 --port 8000
 cd ../app
 npm run dev
 ```
-
-*(...more details on health checks, environment validation, troubleshooting startup issues...)*
 
 ---
 
