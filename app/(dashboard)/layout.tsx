@@ -27,9 +27,9 @@ const navItems = [
   { href: '/home',            label: 'Home',            icon: <GraduationCap size={24} /> },
   { href: '/upload_wardrobe', label: 'Upload Wardrobe', icon: <Upload        size={24} /> },
   { href: '/closet_manager',  label: 'Closet Manager',   icon: <Pencil        size={24} /> },
-  { href: '/looks',           label: 'Styled Looks',     icon: <Shirt         size={24} /> },
-  { href: '/shop',            label: 'Shop Your Style',  icon: <ShoppingCart  size={24} /> },
-  { href: '/stylist',         label: 'StyleBot',         icon: <Bot           size={24} /> },
+  { href: '/styled_looks',           label: 'Styled Looks',     icon: <Shirt         size={24} /> },
+  { href: '/shop_your_style',            label: 'Shop Your Style',  icon: <ShoppingCart  size={24} /> },
+  { href: '/style_bot',         label: 'StyleBot',         icon: <Bot           size={24} /> },
   { href: '/logout',          label: 'Logout',           icon: <LogOut        size={24} /> },
 ];
 
