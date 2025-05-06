@@ -77,7 +77,7 @@ export default function UserInfoPage() {
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        router.push("/login");
+        router.push("/sign-in");
         return;
       }
       const { data: profileData } = await supabase
@@ -161,7 +161,7 @@ export default function UserInfoPage() {
     setSaving(true);
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
-      router.push("/login");
+      router.push("/sign-in");
       return;
     }
     if (profile?.mobile) data.mobile = profile.mobile;
