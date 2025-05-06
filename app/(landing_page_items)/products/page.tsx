@@ -1,9 +1,15 @@
-import React from 'react'
+import ComingSoon from '@/components/ComingSoon';
 
-const page = () => {
+export default function shopyourproductcomingsoon() {
   return (
-    <div>page</div>
-  )
+    <div>
+      {/* ... */}
+      <ComingSoon
+        heading="Coming Soon..."
+        tagline="We’re crafting something amazing. Hang tight!"
+        size={240}
+      />
+      {/* ... */}
+    </div>
+  );
 }
-
-export default page
