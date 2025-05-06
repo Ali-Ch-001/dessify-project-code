@@ -243,60 +243,71 @@ export default function ClosetManagerPage() {
 </div>
 
       {/* ─── DESKTOP GRID ──────────────────────────────── */}
-      <div className="hidden sm:block space-y-8">
-        {Object.entries(grouped).map(([cat, imgs]) => (
-          <motion.section
-            key={cat}
-            variants={sectionVariants}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{once:true}}
-            transition={{duration:0.5}}
-            className="space-y-4"
-          >
-            <h2 className="text-2xl font-semibold text-gray-800">
-              {cat.charAt(0).toUpperCase()+cat.slice(1)}
-            </h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-              {imgs.map(item=>(
-                <motion.div
-                  key={item.id}
-                  whileHover={{scale:1.03,boxShadow:'0 12px 24px rgba(0,0,0,0.1)'}}
-                  initial={{opacity:0,scale:0.9}}
-                  animate={{opacity:1,scale:1}}
-                  exit={{opacity:0,scale:0.8}}
-                  transition={{type:'spring',stiffness:300,damping:20}}
-                  className="relative bg-white rounded-2xl overflow-hidden"
-                >
-                  <div
-                    className="relative w-full h-32 sm:h-40 cursor-pointer"
-                    onClick={()=>setModalUrl(item.image_url)}
-                  >
-                    <Image src={item.image_url} alt={cat} fill className="object-cover"/>
-                  </div>
-                  <button
-                    onClick={()=>handleDelete(item)}
-                    disabled={item.deleting}
-                    className="absolute top-2 right-2 bg-white/90 p-1 rounded-full z-10"
-                  >
-                    {item.deleting? <div className="loader w-4 h-4"/>:<Trash2 size={16} className="text-red-600"/>}
-                  </button>
-                  <div className="p-3 border-t border-gray-100 flex justify-center">
-                    <button
-                      onClick={()=>setEditingId(item.id)}
-                      disabled={item.updating}
-                      className="bg-gradient-to-r from-purple-400 to-indigo-400 text-white text-sm font-medium px-4 py-1 rounded-md
-                                 hover:opacity-90 disabled:opacity-50 transition"
+
+          <div className="hidden sm:block space-y-8">
+            {Object.entries(grouped).map(([cat, imgs]) => (
+              <motion.section
+                key={cat}
+                variants={sectionVariants}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true }}
+                transition={{ duration: 0.5 }}
+                className="space-y-4"
+              >
+                <h2 className="text-2xl font-bold text-gray-800">{cat.charAt(0).toUpperCase() + cat.slice(1)}</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
+                  {imgs.map(item => (
+                    <motion.div
+                      key={item.id}
+                      whileHover={{
+                        scale: 1.05,
+                        boxShadow: '0 16px 40px rgba(0,0,0,0.15)',
+                        transition: { type: 'spring', stiffness: 300, damping: 20 }
+                      }}
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.9 }}
+                      className="relative bg-white rounded-3xl overflow-hidden shadow-sm border border-gray-200 hover:border-indigo-300 transition-all duration-300"
                     >
-                      {item.updating?'Updating…':'Change Category'}
-                    </button>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          </motion.section>
-        ))}
-      </div>
+                      {/* Image Preview */}
+                      <div
+                        className="relative w-full h-48 lg:h-56 cursor-pointer"
+                        onClick={() => setModalUrl(item.image_url)}
+                      >
+                        <Image src={item.image_url} alt={cat} fill className="object-cover transition-all duration-300" />
+                      </div>
+
+                      {/* Delete Button */}
+                      <button
+                        onClick={() => handleDelete(item)}
+                        disabled={item.deleting}
+                        className="absolute top-2 right-2 bg-white/90 p-1 rounded-full z-10 hover:scale-110 transition-all"
+                      >
+                        {item.deleting ? (
+                          <div className="loader w-4 h-4" />
+                        ) : (
+                          <Trash2 size={16} className="text-red-600" />
+                        )}
+                      </button>
+
+                      {/* Change Category Button */}
+                      <div className="p-4 border-t border-gray-100 flex justify-center bg-white/80 backdrop-blur-sm">
+                        <button
+                          onClick={() => setEditingId(item.id)}
+                          disabled={item.updating}
+                          className="bg-gradient-to-r from-purple-500 to-indigo-500 text-white text-sm font-semibold px-4 py-2 rounded-full shadow hover:shadow-md hover:opacity-90 disabled:opacity-50 transition-all"
+                        >
+                          {item.updating ? 'Updating…' : 'Change Category'}
+                        </button>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              </motion.section>
+            ))}
+          </div>
+
 
       {/* ─── IMAGE PREVIEW MODAL ─────────────────────── */}
       <AnimatePresence>
