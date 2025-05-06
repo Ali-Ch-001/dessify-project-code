@@ -73,7 +73,7 @@ const ExclusiveOfferSection: React.FC = () => {
   >
     <h2 className="text-3xl font-bold mb-4 text-white">Exclusive Offer</h2>
     <p className="text-gray-200 mb-6 text-base text-center">
-      A perfect sale matching your style is happening now. Don’t miss out on updating your wardrobe with these tailored discounts!
+      A perfect sale matching your style is happening now. Don&apos;t miss out on updating your wardrobe with these tailored discounts!
     </p>
     {/* Live Countdown (mobile - white text) */}
     <div className="flex space-x-4 mb-6">

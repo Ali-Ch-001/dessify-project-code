@@ -34,6 +34,14 @@ export default function SignUpPage() {
             transition={{ duration: 0.5 }}
           >
             <SignUpForm />
+            
+          <div className="text-center mt-6 text-sm text-[#555555]">
+            Already have an account?{' '}
+            <Link href="/sign-in" className="text-[#29224F] hover:underline">
+              Sign in
+            </Link>
+          </div>
+
           </motion.div>
         </div>
       </div>
