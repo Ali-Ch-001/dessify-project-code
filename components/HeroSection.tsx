@@ -43,17 +43,21 @@ const HeroSection: React.FC = () => {
 
       {/* Right Image / Visual Content */}
       <motion.div
-        className="w-full md:w-1/2 flex justify-center md:justify-end relative"
+        className="w-full md:w-1/2 flex justify-center md:justify-end"
         initial={{ opacity: 0, x: 20 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.7, delay: 0.4 }}
       >
-        <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+        <motion.div
+          className="relative w-full h-[35vh] md:h-screen overflow-hidden"
+          whileHover={{ scale: 1.03 }}
+          whileTap={{ scale: 0.97 }}
+        >
           <Image
             src="/landing_img/landing1.png"
             alt="Model wearing a pastel dress"
-            width={450}
-            height={500}
+            width={600}
+            height={1000}
             style={{ objectFit: "cover" }}
             priority
           />
