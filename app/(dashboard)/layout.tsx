@@ -18,6 +18,8 @@ import {
 import { motion } from 'framer-motion';
 import SidebarLink from '@/components/SidebarLink';
 import ProfileButton from '@/components/ProfileButton';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { SpeedInsights } from "@vercel/speed-insights/next"
 
 interface DashboardLayoutProps {
   children: ReactNode;
