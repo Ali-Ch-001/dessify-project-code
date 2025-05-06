@@ -1,7 +1,7 @@
 // app/(dashboard)/closet_manager/page.tsx
 'use client';
 
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { supabase } from '@/lib/supabaseClient';
 import { motion, AnimatePresence, Variants } from 'framer-motion';
@@ -56,7 +56,6 @@ export default function ClosetManagerPage() {
   // per-category mobile carousel state
   const [mobileIndex, setMobileIndex] = useState<Record<string, number>>({});
   const [mobileDir, setMobileDir] = useState<Record<string, number>>({});
-  const touchStartX = useRef(0);
 
   // fetch & group
   useEffect(() => {
@@ -144,7 +143,7 @@ export default function ClosetManagerPage() {
     const hasMultiple = imgs.length > 1;
 
     // helper to handle swipe drag end
-    const handleDragEnd = (_: any, info: PanInfo) => {
+    const handleDragEnd = (_: never, info: PanInfo) => {
       if (info.offset.x > 80 && hasMultiple) slide(cat, -1);
       if (info.offset.x < -80 && hasMultiple) slide(cat, 1);
     };
