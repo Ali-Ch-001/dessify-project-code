@@ -34,7 +34,7 @@ export default function ResetPasswordClient() {
       setStatus('error');
     } else {
       setStatus('success');
-      setTimeout(() => router.replace('/login'), 1500);
+      setTimeout(() => router.replace('/sign-in'), 1500);
     }
   };
 
