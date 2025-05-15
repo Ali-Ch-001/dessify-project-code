@@ -126,7 +126,7 @@ const LoginForm: React.FC = () => {
 
       {/* Additional Links */}
       <div className="flex flex-col items-center space-y-2">
-        <Link href="/forgot-password" className="text-sm text-[#29224F] hover:underline">
+        <Link href="/forgotpassword" className="text-sm text-[#29224F] hover:underline">
           Forgot Password?
         </Link>
         <div className="text-sm text-[#555555]">
