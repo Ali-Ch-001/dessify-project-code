@@ -1,22 +1,23 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
+import { motion, AnimatePresence } from 'framer-motion';
 import PrimaryButton from '@/components/PrimaryButton';
 
 export default function ResetPasswordClient() {
-  const router      = useRouter();
-  const params      = useSearchParams();
-  const accessToken = params.get('access_token')!;
-  const refreshToken= params.get('refresh_token')!;
-  const [password, setPassword]   = useState('');
-  const [status, setStatus]       = useState<'idle'|'setting'|'success'|'error'>('idle');
-  const [errorMsg, setErrorMsg]   = useState('');
+  const params       = useSearchParams();
+  const accessToken  = params.get('access_token')  || '';
+  const refreshToken = params.get('refresh_token') || '';
+  const router       = useRouter();
 
-  // once we have the tokens, establish the session
+  const [password, setPassword] = useState('');
+  const [status,   setStatus]   = useState<'idle'|'setting'|'success'|'error'>('idle');
+  const [errorMsg, setErrorMsg] = useState('');
+
   useEffect(() => {
+    // restore session from the tokens in the URL
     if (accessToken && refreshToken) {
       supabase.auth
         .setSession({ access_token: accessToken, refresh_token: refreshToken })
@@ -46,6 +47,7 @@ export default function ResetPasswordClient() {
         transition={{ duration: 0.6 }}
       >
         <h1 className="text-2xl font-bold mb-4 text-center">Reset Password</h1>
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label htmlFor="password" className="block text-gray-700 mb-1">
@@ -69,7 +71,7 @@ export default function ResetPasswordClient() {
           <AnimatePresence>
             {status === 'error' && (
               <motion.div
-                className="text-red-600 text-sm"
+                className="text-red-600 text-sm mt-2"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
@@ -79,7 +81,7 @@ export default function ResetPasswordClient() {
             )}
             {status === 'success' && (
               <motion.div
-                className="text-green-600 text-sm"
+                className="text-green-600 text-sm mt-2"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
@@ -92,7 +94,7 @@ export default function ResetPasswordClient() {
 
         <div className="mt-6 text-center">
           <button
-            onClick={() => router.replace('/login')}
+            onClick={() => router.replace('/sign-in')}
             className="text-indigo-600 hover:underline text-sm"
           >
             Back to Login

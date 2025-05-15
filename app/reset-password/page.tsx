@@ -1,6 +1,11 @@
-// app/reset-password/page.tsx
+'use client';                                  // ← make this a client component
 
-import ResetPasswordClient from './ResetPasswordClient';
+import dynamicImport from 'next/dynamic';     // rename the import to avoid conflicts
+
+const ResetPasswordClient = dynamicImport(
+  () => import('./ResetPasswordClient'),
+  { ssr: false }
+);
 
 export default function Page() {
   return <ResetPasswordClient />;
