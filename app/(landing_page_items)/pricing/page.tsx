@@ -52,7 +52,7 @@ const plans = [
 const navLinks = [
   { label: "Home", href: "/" },
   { label: "Trial", href: "/#info" },
-  { label: "Shop", href: "/product" },
+  { label: "Shop", href: "/products" },
   { label: "Contact", href: "/contact" },
 ];
 
