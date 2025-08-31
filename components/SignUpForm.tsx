@@ -89,114 +89,114 @@ const SignUpForm: React.FC = () => {
           <p className="text-lg text-gray-700">Redirecting to login...</p>
         </motion.div>
       ) : (
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           {/* Row 1: First Name & Last Name */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-black mb-1 text-lg font-medium">
+              <label className="block text-black mb-1 text-sm font-medium">
                 First Name
               </label>
               <input
                 type="text"
                 placeholder="Enter First Name"
                 {...register("firstName")}
-                className="w-full px-4 py-3 text-lg border-2 border-[#E4E7FF] rounded-md 
+                className="w-full px-3 py-2 text-base border-2 border-[#E4E7FF] rounded-md 
                            focus:outline-none focus:ring-2 focus:ring-[#29224F] placeholder:text-[#000000] text-black"
               />
               {errors.firstName && (
-                <p className="text-red-600 text-sm mt-1">{errors.firstName.message}</p>
+                <p className="text-red-600 text-xs mt-1">{errors.firstName.message}</p>
               )}
             </div>
             <div>
-              <label className="block text-black mb-1 text-lg font-medium">
+              <label className="block text-black mb-1 text-sm font-medium">
                 Last Name
               </label>
               <input
                 type="text"
                 placeholder="Enter Last Name"
                 {...register("lastName")}
-                className="w-full px-4 py-3 text-lg border-2 border-[#E4E7FF] rounded-md 
+                className="w-full px-3 py-2 text-base border-2 border-[#E4E7FF] rounded-md 
                            focus:outline-none focus:ring-2 focus:ring-[#29224F] placeholder:text-[#000000] text-black"
               />
               {errors.lastName && (
-                <p className="text-red-600 text-sm mt-1">{errors.lastName.message}</p>
+                <p className="text-red-600 text-xs mt-1">{errors.lastName.message}</p>
               )}
             </div>
           </div>
 
           {/* Row 2: Email & Mobile */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-black mb-1 text-lg font-medium">
+              <label className="block text-black mb-1 text-sm font-medium">
                 Email Id
               </label>
               <input
                 type="email"
                 placeholder="info@xyz.com"
                 {...register("email")}
-                className="w-full px-4 py-3 text-lg border-2 border-[#E4E7FF] rounded-md 
+                className="w-full px-3 py-2 text-base border-2 border-[#E4E7FF] rounded-md 
                            focus:outline-none focus:ring-2 focus:ring-[#29224F] placeholder:text-[#000000] text-black"
               />
               {errors.email && (
-                <p className="text-red-600 text-sm mt-1">{errors.email.message}</p>
+                <p className="text-red-600 text-xs mt-1">{errors.email.message}</p>
               )}
             </div>
             <div>
-              <label className="block text-black mb-1 text-lg font-medium">
+              <label className="block text-black mb-1 text-sm font-medium">
                 Mobile No. (E.164 format)
               </label>
               <input
                 type="text"
                 placeholder="+92xxxxxxxxxx"
                 {...register("mobile")}
-                className="w-full px-4 py-3 text-lg border-2 border-[#E4E7FF] rounded-md 
+                className="w-full px-3 py-2 text-base border-2 border-[#E4E7FF] rounded-md 
                            focus:outline-none focus:ring-2 focus:ring-[#29224F] placeholder:text-[#000000] text-black"
               />
               {errors.mobile && (
-                <p className="text-red-600 text-sm mt-1">{errors.mobile.message}</p>
+                <p className="text-red-600 text-xs mt-1">{errors.mobile.message}</p>
               )}
             </div>
           </div>
 
           {/* Row 3: Password & Confirm Password */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-black mb-1 text-lg font-medium">
+              <label className="block text-black mb-1 text-sm font-medium">
                 Password
               </label>
               <input
                 type="password"
                 placeholder="xxxxxxx"
                 {...register("password")}
-                className="w-full px-4 py-3 text-lg border-2 border-[#E4E7FF] rounded-md 
+                className="w-full px-3 py-2 text-base border-2 border-[#E4E7FF] rounded-md 
                            focus:outline-none focus:ring-2 focus:ring-[#29224F] placeholder:text-[#000000] text-black"
               />
               {errors.password && (
-                <p className="text-red-600 text-sm mt-1">{errors.password.message}</p>
+                <p className="text-red-600 text-xs mt-1">{errors.password.message}</p>
               )}
             </div>
             <div>
-              <label className="block text-black mb-1 text-lg font-medium">
+              <label className="block text-black mb-1 text-sm font-medium">
                 Confirm Password
               </label>
               <input
                 type="password"
                 placeholder="xxxxxxx"
                 {...register("confirmPassword")}
-                className="w-full px-4 py-3 text-lg border-2 border-[#E4E7FF] rounded-md 
+                className="w-full px-3 py-2 text-base border-2 border-[#E4E7FF] rounded-md 
                            focus:outline-none focus:ring-2 focus:ring-[#29224F] placeholder:text-[#000000] text-black"
               />
               {errors.confirmPassword && (
-                <p className="text-red-600 text-sm mt-1">{errors.confirmPassword.message}</p>
+                <p className="text-red-600 text-xs mt-1">{errors.confirmPassword.message}</p>
               )}
             </div>
           </div>
 
           {/* Sign Up Button */}
-          <div className="mt-6">
+          <div className="mt-4">
             <button
               type="submit"
-              className="w-full bg-[#29224F] text-white py-3 rounded-md hover:bg-[#555555] transition-colors font-semibold text-lg"
+              className="w-full bg-[#29224F] text-white py-2 rounded-md hover:bg-[#555555] transition-colors font-semibold text-base"
             >
               Sign Up
             </button>

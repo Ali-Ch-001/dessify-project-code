@@ -5,10 +5,22 @@ import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { supabase } from '@/lib/supabaseClient';
 import { motion, AnimatePresence, Variants } from 'framer-motion';
-import { Trash2, X } from 'lucide-react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { 
+  Trash2, 
+  X, 
+  ChevronLeft, 
+  ChevronRight, 
+  Sparkles, 
+  Shirt, 
+  Filter,
+  Grid,
+  List,
+  Download,
+  Share2,
+  Heart,
+  Eye
+} from 'lucide-react';
 import { PanInfo } from 'framer-motion';
-
 
 type WardrobeItem = {
   id: string;
@@ -48,10 +60,38 @@ const swipeVariants: Variants = {
   })
 };
 
+// Container variants for staggered animations
+const containerVariants: Variants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1
+    }
+  }
+};
+
+// Item variants for individual cards
+const itemVariants: Variants = {
+  hidden: { opacity: 0, scale: 0.8, y: 20 },
+  visible: { 
+    opacity: 1, 
+    scale: 1, 
+    y: 0,
+    transition: {
+      type: "spring",
+      stiffness: 300,
+      damping: 20
+    }
+  }
+};
+
 export default function ClosetManagerPage() {
   const [items, setItems] = useState<WardrobeItem[]>([]);
   const [modalUrl, setModalUrl] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
   // per-category mobile carousel state
   const [mobileIndex, setMobileIndex] = useState<Record<string, number>>({});
@@ -123,250 +163,455 @@ export default function ClosetManagerPage() {
     setMobileIndex(i=>({...i,[cat]:next}));
   };
 
+  // Filter items based on category
+  const filteredItems = items.filter(item => {
+    return selectedCategory === 'all' || item.category === selectedCategory;
+  });
+
+  const filteredGrouped = filteredItems.reduce<Record<string,WardrobeItem[]>>((acc,it)=>{
+    acc[it.category] = [...(acc[it.category]||[]), it];
+    return acc;
+  },{});
+
   return (
-    <div className="p-4 sm:p-6 lg:p-8 space-y-8">
-      {/* Header */}
+    <div className="space-y-6">
+      {/* Enhanced Header */}
       <motion.div
-        className="bg-gradient-to-r from-purple-400 to-indigo-400 rounded-2xl p-6 text-white text-center shadow-xl"
-        whileHover={{ scale: 1.02 }}
-        transition={{ type:'spring', stiffness:300 }}
+        className="relative overflow-hidden bg-gradient-to-br from-purple-600 via-indigo-600 to-purple-700 rounded-2xl p-6 text-white shadow-xl shadow-purple-500/25"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
+        whileHover={{ scale: 1.01 }}
       >
-        <h1 className="text-3xl font-extrabold">Your Closet</h1>
+        {/* Background decoration */}
+        <motion.div
+          className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full blur-xl"
+          animate={{ 
+            scale: [1, 1.2, 1],
+            rotate: [0, 180, 360]
+          }}
+          transition={{ 
+            duration: 8, 
+            repeat: Infinity, 
+            ease: "linear" 
+          }}
+        />
+        
+        <div className="relative z-10 text-center">
+          <motion.div
+            className="flex justify-center mb-3"
+            animate={{ 
+              scale: [1, 1.1, 1],
+              rotate: [0, 5, -5, 0]
+            }}
+            transition={{ 
+              duration: 4, 
+              repeat: Infinity, 
+              ease: "easeInOut" 
+            }}
+          >
+            <Shirt size={36} className="text-yellow-300" />
+          </motion.div>
+          
+          <h1 className="text-3xl font-bold mb-1">Your Closet</h1>
+          <p className="text-purple-100 text-base mb-3">Manage and organize your wardrobe items</p>
+          
+          {/* Stats */}
+          <div className="flex justify-center gap-6">
+            <div className="text-center">
+              <div className="text-xl font-bold">{items.length}</div>
+              <div className="text-xs text-purple-200">Total Items</div>
+            </div>
+            <div className="text-center">
+              <div className="text-xl font-bold">{Object.keys(grouped).length}</div>
+              <div className="text-xs text-purple-200">Categories</div>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Compact Filter Bar */}
+      <motion.div
+        className="flex justify-between items-center"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+      >
+        {/* Category Filter - Compact */}
+        <div className="relative">
+          <Filter className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                      <select
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              className="pl-8 pr-6 py-2 bg-white/80 backdrop-blur-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent appearance-none text-sm font-medium"
+            >
+              <option value="all">All Categories</option>
+              {Object.keys(grouped).sort().map(cat => (
+                <option key={cat} value={cat}>
+                  {cat.charAt(0).toUpperCase() + cat.slice(1)}
+                </option>
+              ))}
+            </select>
+        </div>
+
+        {/* View Mode Toggle */}
+        <div className="flex bg-gray-100 rounded-lg p-1">
+          <button
+            onClick={() => setViewMode('grid')}
+            className={`p-1.5 rounded-md transition-all ${
+              viewMode === 'grid' 
+                ? 'bg-white shadow-sm text-purple-600' 
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            <Grid className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => setViewMode('list')}
+            className={`p-1.5 rounded-md transition-all ${
+              viewMode === 'list' 
+                ? 'bg-white shadow-sm text-purple-600' 
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            <List className="w-4 h-4" />
+          </button>
+        </div>
       </motion.div>
 
       {/* ─── MOBILE CAROUSEL ───────────────────────────── */}
       <div className="sm:hidden space-y-8">
-  {Object.entries(grouped).map(([cat, imgs]) => {
-    const idx = mobileIndex[cat] || 0;
-    const dir = mobileDir[cat] || 0;
-    const item = imgs[idx];
-    const hasMultiple = imgs.length > 1;
+        {Object.entries(filteredGrouped).sort(([a], [b]) => a.localeCompare(b)).map(([cat, imgs]) => {
+          const idx = mobileIndex[cat] || 0;
+          const dir = mobileDir[cat] || 0;
+          const item = imgs[idx];
+          const hasMultiple = imgs.length > 1;
 
-    // helper to handle swipe drag end
-    const handleDragEnd = (_: never, info: PanInfo) => {
-      if (info.offset.x > 80 && hasMultiple) slide(cat, -1);
-      if (info.offset.x < -80 && hasMultiple) slide(cat, 1);
-    };
+          // helper to handle swipe drag end
+          const handleDragEnd = (_: never, info: PanInfo) => {
+            if (info.offset.x > 80 && hasMultiple) slide(cat, -1);
+            if (info.offset.x < -80 && hasMultiple) slide(cat, 1);
+          };
 
-    return (
-      <motion.section
-        key={cat}
-        variants={sectionVariants}
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true }}
-        transition={{ duration: 0.5 }}
-        className="space-y-2"
-      >
-        <h2 className="text-xl font-semibold text-gray-800">
-          {cat.charAt(0).toUpperCase() + cat.slice(1)}
-        </h2>
-
-        <div className="relative w-full">
-          <AnimatePresence custom={dir}>
-            <motion.div
-              key={item.id}
-              custom={dir}
-              variants={swipeVariants}
-              initial="enter"
-              animate="center"
-              exit="exit"
-              transition={{
-                x: { type: 'spring', stiffness: 300, damping: 30 },
-                opacity: { duration: 0.2 }
-              }}
-              drag={hasMultiple ? 'x' : false}
-              dragConstraints={{ left: 0, right: 0 }}
-              onDragEnd={handleDragEnd}
-              className="mx-auto bg-white rounded-2xl overflow-hidden w-full max-w-xs"
+          return (
+            <motion.section
+              key={cat}
+              variants={sectionVariants}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+              transition={{ duration: 0.5 }}
+              className="space-y-4"
             >
-              {/* image */}
-              <div
-                className="relative w-full h-40 cursor-pointer"
-                onClick={() => setModalUrl(item.image_url)}
-              >
-                <Image
-                  src={item.image_url}
-                  alt={cat}
-                  fill
-                  className="object-cover"
-                />
+              <div className="flex items-center gap-3">
+                <h2 className="text-xl font-bold text-gray-800">
+                  {cat.charAt(0).toUpperCase() + cat.slice(1)}
+                </h2>
+                <div className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm font-medium">
+                  {imgs.length} items
+                </div>
               </div>
 
-              {/* delete */}
-              <button
-                onClick={() => handleDelete(item)}
-                disabled={item.deleting}
-                className="absolute top-2 right-2 bg-white/90 p-1 rounded-full z-10"
-              >
-                {item.deleting
-                  ? <div className="loader w-4 h-4"/>
-                  : <Trash2 size={16} className="text-red-600"/>
-                }
-              </button>
+              <div className="relative w-full">
+                <AnimatePresence custom={dir}>
+                  <motion.div
+                    key={item.id}
+                    custom={dir}
+                    variants={swipeVariants}
+                    initial="enter"
+                    animate="center"
+                    exit="exit"
+                    transition={{
+                      x: { type: 'spring', stiffness: 300, damping: 30 },
+                      opacity: { duration: 0.2 }
+                    }}
+                    drag={hasMultiple ? 'x' : false}
+                    dragConstraints={{ left: 0, right: 0 }}
+                    onDragEnd={handleDragEnd}
+                    className="mx-auto bg-white rounded-2xl overflow-hidden w-full max-w-xs shadow-xl border border-gray-100"
+                  >
+                    {/* image */}
+                    <div
+                      className="relative w-full h-48 cursor-pointer group"
+                      onClick={() => setModalUrl(item.image_url)}
+                    >
+                      <Image
+                        src={item.image_url}
+                        alt={cat}
+                        fill
+                        className="object-cover transition-transform duration-300 group-hover:scale-105"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                      <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        <div className="bg-white/90 backdrop-blur-sm rounded-full p-2">
+                          <Eye className="w-4 h-4 text-gray-700" />
+                        </div>
+                      </div>
+                    </div>
 
-              {/* change */}
-              <div className="p-3 border-t border-gray-100 flex justify-center">
-                <button
-                  onClick={() => setEditingId(item.id)}
-                  disabled={item.updating}
-                  className="bg-gradient-to-r from-purple-400 to-indigo-400 text-white text-sm font-medium px-4 py-1 rounded-md
-                             hover:opacity-90 disabled:opacity-50 transition"
-                >
-                  {item.updating ? 'Updating…' : 'Change Category'}
-                </button>
+                    {/* delete */}
+                    <button
+                      onClick={() => handleDelete(item)}
+                      disabled={item.deleting}
+                      className="absolute top-2 left-2 bg-white/90 backdrop-blur-sm p-2 rounded-full z-10 hover:scale-110 transition-all duration-200"
+                    >
+                      {item.deleting
+                        ? <div className="loader w-4 h-4"/>
+                        : <Trash2 size={16} className="text-red-600"/>
+                      }
+                    </button>
+
+                    {/* change */}
+                    <div className="p-4 border-t border-gray-100 flex justify-center bg-gradient-to-r from-purple-50 to-indigo-50">
+                      <button
+                        onClick={() => setEditingId(item.id)}
+                        disabled={item.updating}
+                        className="bg-gradient-to-r from-purple-500 to-indigo-500 text-white text-sm font-semibold px-6 py-2 rounded-xl shadow-lg hover:shadow-xl hover:scale-105 disabled:opacity-50 transition-all duration-200"
+                      >
+                        {item.updating ? 'Updating…' : 'Change Category'}
+                      </button>
+                    </div>
+                  </motion.div>
+                </AnimatePresence>
+
+                {/* only show arrows if multiple */}
+                {hasMultiple && (
+                  <>
+                    <button
+                      onClick={() => slide(cat, -1)}
+                      className="absolute top-1/2 left-2 -translate-y-1/2 bg-white/90 backdrop-blur-sm hover:bg-white p-3 rounded-full shadow-lg hover:scale-110 transition-all duration-200"
+                    >
+                      <ChevronLeft size={20} className="text-gray-700" />
+                    </button>
+                    <button
+                      onClick={() => slide(cat, 1)}
+                      className="absolute top-1/2 right-2 -translate-y-1/2 bg-white/90 backdrop-blur-sm hover:bg-white p-3 rounded-full shadow-lg hover:scale-110 transition-all duration-200"
+                    >
+                      <ChevronRight size={20} className="text-gray-700" />
+                    </button>
+                  </>
+                )}
               </div>
-            </motion.div>
-          </AnimatePresence>
-
-          {/* only show arrows if multiple */}
-          {hasMultiple && (
-            <>
-              <button
-                onClick={() => slide(cat, -1)}
-                className="absolute top-1/2 left-2 -translate-y-1/2 bg-white/80 hover:bg-white p-2 rounded-full shadow"
-              >
-                <ChevronLeft size={20} className="text-gray-700" />
-              </button>
-              <button
-                onClick={() => slide(cat, 1)}
-                className="absolute top-1/2 right-2 -translate-y-1/2 bg-white/80 hover:bg-white p-2 rounded-full shadow"
-              >
-                <ChevronRight size={20} className="text-gray-700" />
-              </button>
-            </>
-          )}
-        </div>
-      </motion.section>
-    );
-  })}
-</div>
+            </motion.section>
+          );
+        })}
+      </div>
 
       {/* ─── DESKTOP GRID ──────────────────────────────── */}
-
-          <div className="hidden sm:block space-y-8">
-            {Object.entries(grouped).map(([cat, imgs]) => (
-              <motion.section
-                key={cat}
-                variants={sectionVariants}
-                initial="hidden"
-                whileInView="visible"
-                viewport={{ once: true }}
-                transition={{ duration: 0.5 }}
-                className="space-y-4"
-              >
+      <div className="hidden sm:block space-y-8">
+        {Object.entries(filteredGrouped).sort(([a], [b]) => a.localeCompare(b)).map(([cat, imgs]) => (
+          <motion.section
+            key={cat}
+            variants={sectionVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+            className="space-y-6"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
                 <h2 className="text-2xl font-bold text-gray-800">{cat.charAt(0).toUpperCase() + cat.slice(1)}</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
-                  {imgs.map(item => (
-                    <motion.div
-                      key={item.id}
-                      whileHover={{
-                        scale: 1.05,
-                        boxShadow: '0 16px 40px rgba(0,0,0,0.15)',
-                        transition: { type: 'spring', stiffness: 300, damping: 20 }
-                      }}
-                      initial={{ opacity: 0, scale: 0.95 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.9 }}
-                      className="relative bg-white rounded-3xl overflow-hidden shadow-sm border border-gray-200 hover:border-indigo-300 transition-all duration-300"
-                    >
-                      {/* Image Preview */}
-                      <div
-                        className="relative w-full h-48 lg:h-56 cursor-pointer"
-                        onClick={() => setModalUrl(item.image_url)}
-                      >
-                        <Image src={item.image_url} alt={cat} fill className="object-cover transition-all duration-300" />
+                <div className="px-4 py-2 bg-gradient-to-r from-purple-100 to-indigo-100 text-purple-700 rounded-full text-sm font-semibold">
+                  {imgs.length} items
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-purple-500" />
+                <span className="text-sm text-gray-600">Category</span>
+              </div>
+            </div>
+            
+            <motion.div
+              variants={containerVariants}
+              initial="hidden"
+              animate="visible"
+              className={`grid gap-6 ${
+                viewMode === 'grid' 
+                  ? 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4' 
+                  : 'grid-cols-1'
+              }`}
+            >
+              {imgs.map(item => (
+                <motion.div
+                  key={item.id}
+                  variants={itemVariants}
+                  whileHover={{
+                    scale: 1.05,
+                    boxShadow: '0 20px 50px rgba(0,0,0,0.15)',
+                    transition: { type: 'spring', stiffness: 300, damping: 20 }
+                  }}
+                  className={`relative bg-white rounded-2xl overflow-hidden shadow-lg border border-gray-100 hover:border-purple-300 transition-all duration-300 ${
+                    viewMode === 'list' ? 'flex' : ''
+                  }`}
+                >
+                  {/* Image Preview */}
+                  <div
+                    className={`relative cursor-pointer group ${
+                      viewMode === 'list' ? 'w-32 h-32 flex-shrink-0' : 'w-full h-48 lg:h-56'
+                    }`}
+                    onClick={() => setModalUrl(item.image_url)}
+                  >
+                    <Image 
+                      src={item.image_url} 
+                      alt={cat} 
+                      fill 
+                      className="object-cover transition-all duration-300 group-hover:scale-110" 
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                    <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                      <div className="bg-white/90 backdrop-blur-sm rounded-full p-2">
+                        <Eye className="w-4 h-4 text-gray-700" />
                       </div>
+                    </div>
+                  </div>
 
-                      {/* Delete Button */}
+                  {/* Delete Button */}
+                  <button
+                    onClick={() => handleDelete(item)}
+                    disabled={item.deleting}
+                    className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm p-2 rounded-full z-10 hover:scale-110 transition-all duration-200 shadow-lg"
+                  >
+                    {item.deleting ? (
+                      <div className="loader w-4 h-4" />
+                    ) : (
+                      <Trash2 size={16} className="text-red-600" />
+                    )}
+                  </button>
+
+                  {/* Content */}
+                  <div className={`p-4 border-t border-gray-100 bg-gradient-to-r from-purple-50 to-indigo-50 ${
+                    viewMode === 'list' ? 'flex-1 flex items-center justify-between' : ''
+                  }`}>
+                    <div className={viewMode === 'list' ? 'flex-1' : 'text-center'}>
                       <button
-                        onClick={() => handleDelete(item)}
-                        disabled={item.deleting}
-                        className="absolute top-2 right-2 bg-white/90 p-1 rounded-full z-10 hover:scale-110 transition-all"
+                        onClick={() => setEditingId(item.id)}
+                        disabled={item.updating}
+                        className="bg-gradient-to-r from-purple-500 to-indigo-500 text-white text-sm font-semibold px-6 py-2 rounded-xl shadow-lg hover:shadow-xl hover:scale-105 disabled:opacity-50 transition-all duration-200"
                       >
-                        {item.deleting ? (
-                          <div className="loader w-4 h-4" />
-                        ) : (
-                          <Trash2 size={16} className="text-red-600" />
-                        )}
+                        {item.updating ? 'Updating…' : 'Change Category'}
                       </button>
-
-                      {/* Change Category Button */}
-                      <div className="p-4 border-t border-gray-100 flex justify-center bg-white/80 backdrop-blur-sm">
-                        <button
-                          onClick={() => setEditingId(item.id)}
-                          disabled={item.updating}
-                          className="bg-gradient-to-r from-purple-500 to-indigo-500 text-white text-sm font-semibold px-4 py-2 rounded-full shadow hover:shadow-md hover:opacity-90 disabled:opacity-50 transition-all"
-                        >
-                          {item.updating ? 'Updating…' : 'Change Category'}
+                    </div>
+                    
+                    {viewMode === 'list' && (
+                      <div className="flex gap-2">
+                        <button className="p-2 bg-white/80 backdrop-blur-sm rounded-lg hover:bg-white transition-all duration-200">
+                          <Heart className="w-4 h-4 text-gray-600" />
+                        </button>
+                        <button className="p-2 bg-white/80 backdrop-blur-sm rounded-lg hover:bg-white transition-all duration-200">
+                          <Share2 className="w-4 h-4 text-gray-600" />
                         </button>
                       </div>
-                    </motion.div>
-                  ))}
-                </div>
-              </motion.section>
-            ))}
-          </div>
+                    )}
+                  </div>
+                </motion.div>
+              ))}
+            </motion.div>
+          </motion.section>
+        ))}
+      </div>
 
-
-      {/* ─── IMAGE PREVIEW MODAL ─────────────────────── */}
+      {/* ─── ENHANCED IMAGE PREVIEW MODAL ─────────────────────── */}
       <AnimatePresence>
         {modalUrl && (
           <motion.div
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50"
-            initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}
+            className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-50 p-4"
+            initial={{opacity:0}} 
+            animate={{opacity:1}} 
+            exit={{opacity:0}}
             onClick={()=>setModalUrl(null)}
           >
             <motion.div
-              className="relative bg-white rounded-2xl max-w-lg w-11/12 p-4"
-              initial={{y:50,opacity:0}} animate={{y:0,opacity:1}} exit={{y:50,opacity:0}}
+              className="relative bg-white rounded-2xl w-full max-w-3xl max-h-[95vh] overflow-hidden shadow-2xl"
+              initial={{y:50,opacity:0}} 
+              animate={{y:0,opacity:1}} 
+              exit={{y:50,opacity:0}}
               transition={{type:'spring',stiffness:200,damping:25}}
               onClick={e=>e.stopPropagation()}
             >
-              <button
-                onClick={()=>setModalUrl(null)}
-                className="absolute top-3 right-3 text-gray-700 hover:text-gray-900"
-              ><X size={24}/></button>
-              <div className="relative w-full h-[60vh] sm:h-[70vh]">
-                <Image src={modalUrl} alt="Full Preview" fill className="object-contain"/>
+              {/* Header */}
+              <div className="flex justify-between items-center p-4 border-b border-gray-100 bg-gradient-to-r from-purple-50 to-indigo-50">
+                <h3 className="text-lg font-semibold text-gray-800">Item Preview</h3>
+                <button
+                  onClick={()=>setModalUrl(null)}
+                  className="bg-white/80 backdrop-blur-sm hover:bg-white p-2 rounded-full transition-all duration-200 hover:scale-110"
+                >
+                  <X size={18} className="text-gray-600"/>
+                </button>
+              </div>
+              
+              {/* Image */}
+              <div className="relative w-full h-[60vh] flex items-center justify-center bg-gray-50">
+                <Image 
+                  src={modalUrl} 
+                  alt="Full Preview" 
+                  fill 
+                  className="object-contain"
+                />
+              </div>
+              
+              {/* Footer Actions */}
+              <div className="flex justify-center gap-3 p-4 bg-gradient-to-r from-purple-50 to-indigo-50">
+                <button className="flex items-center gap-2 bg-gradient-to-r from-purple-500 to-indigo-500 text-white px-4 py-2 rounded-lg font-semibold hover:scale-105 transition-all duration-200 shadow-lg text-sm">
+                  <Download className="w-4 h-4" />
+                  Download
+                </button>
+                <button className="flex items-center gap-2 bg-white/80 backdrop-blur-sm border border-gray-200 text-gray-700 px-4 py-2 rounded-lg font-semibold hover:bg-white transition-all duration-200 text-sm">
+                  <Share2 className="w-4 h-4" />
+                  Share
+                </button>
               </div>
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* ─── CATEGORY POPUP ─────────────────────────── */}
+      {/* ─── ENHANCED CATEGORY POPUP ─────────────────────────── */}
       <AnimatePresence>
         {editingId && (
           <motion.div
-            className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50"
-            initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}
+            className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4"
+            initial={{opacity:0}} 
+            animate={{opacity:1}} 
+            exit={{opacity:0}}
             onClick={()=>setEditingId(null)}
           >
             <motion.div
-              className="bg-white rounded-2xl p-6 max-w-md w-11/12"
-              initial={{scale:0.8,opacity:0}} animate={{scale:1,opacity:1}} exit={{scale:0.8,opacity:0}}
+              className="bg-white rounded-2xl p-8 max-w-2xl w-full max-h-[80vh] overflow-hidden shadow-2xl border border-white/20"
+              initial={{scale:0.8,opacity:0}} 
+              animate={{scale:1,opacity:1}} 
+              exit={{scale:0.8,opacity:0}}
               transition={{type:'spring',stiffness:200,damping:20}}
               onClick={e=>e.stopPropagation()}
             >
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold text-gray-800">Select Category</h3>
-                <button onClick={()=>setEditingId(null)}>
-                  <X size={20} className="text-gray-600 hover:text-gray-900"/>
+              {/* Header */}
+              <div className="flex justify-between items-center mb-6">
+                <div>
+                  <h3 className="text-2xl font-bold text-gray-800">Select Category</h3>
+                  <p className="text-gray-600 mt-1">Choose the appropriate category for this item</p>
+                </div>
+                <button 
+                  onClick={()=>setEditingId(null)}
+                  className="bg-gray-100 hover:bg-gray-200 p-2 rounded-full transition-all duration-200"
+                >
+                  <X size={20} className="text-gray-600"/>
                 </button>
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-80 overflow-auto">
-                {CATEGORY_OPTIONS.map(opt=>(
+              
+              {/* Categories Grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 max-h-96 overflow-y-auto">
+                {CATEGORY_OPTIONS.sort().map(opt=>(
                   <motion.button
                     key={opt}
                     onClick={()=>{
                       const item = items.find(i=>i.id===editingId);
                       if (item) handleCategoryChange(item,opt);
                     }}
-                    whileHover={{scale:1.05}} whileTap={{scale:0.95}}
-                    className="text-sm text-gray-800 px-3 py-1 bg-gray-100 rounded-full text-center hover:bg-indigo-100"
+                    whileHover={{scale:1.05}} 
+                    whileTap={{scale:0.95}}
+                    className="text-sm text-gray-800 px-4 py-3 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl text-center hover:from-purple-50 hover:to-indigo-50 hover:text-purple-700 border border-gray-200 hover:border-purple-300 transition-all duration-200 font-medium"
                   >
-                    {opt}
+                    {opt.charAt(0).toUpperCase() + opt.slice(1)}
                   </motion.button>
                 ))}
               </div>
