@@ -341,20 +341,12 @@ const InfoSection: React.FC = () => {
             transition={{ duration: 0.6 }}
             viewport={{ once: true }}
           >
-            <span className="bg-gradient-to-r from-[#29224F] via-purple-600 to-pink-600 bg-clip-text text-transparent bg-[length:200%_auto] animate-pulse">
+            <span className="bg-gradient-to-r from-[#29224F] via-purple-600 to-pink-600 bg-clip-text text-transparent">
               Your Wardrobe But Better
             </span>
             {/* Decorative elements */}
-            <motion.div
-              className="absolute -top-2 -left-2 w-3 h-3 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full"
-              animate={{ scale: [1, 1.1, 1] }}
-              transition={{ duration: 3, repeat: Infinity }}
-            />
-            <motion.div
-              className="absolute -bottom-2 -right-2 w-2 h-2 bg-gradient-to-r from-pink-400 to-purple-400 rounded-full"
-              animate={{ scale: [1, 1.2, 1] }}
-              transition={{ duration: 3.5, repeat: Infinity, delay: 0.5 }}
-            />
+            <div className="absolute -top-2 -left-2 w-3 h-3 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full" />
+            <div className="absolute -bottom-2 -right-2 w-2 h-2 bg-gradient-to-r from-pink-400 to-purple-400 rounded-full" />
           </motion.h3>
           <p className="text-gray-600 text-lg md:text-xl max-w-3xl mx-auto mb-8">
             Manage and personalize your digital wardrobe effortlessly with Your Dressify Closet.
@@ -523,16 +515,15 @@ const InfoSection: React.FC = () => {
               className="relative group"
               initial={{ opacity: 0, y: 50 }}
               whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: index * 0.1 }}
               viewport={{ once: true }}
               whileHover={{
                 scale: 1.05,
-                rotateY: 10,
-                rotateX: -5,
+                y: -5,
               }}
-              style={{
-                transformStyle: "preserve-3d",
-                perspective: 1000,
+              transition={{ 
+                duration: 0.6, 
+                delay: index * 0.1,
+                hover: { duration: 0.3 }
               }}
             >
               <div className="relative overflow-hidden rounded-2xl shadow-xl bg-white">
@@ -562,16 +553,8 @@ const InfoSection: React.FC = () => {
                 {/* Enhanced Caption with improved heading */}
                 <div className="p-5 bg-gradient-to-r from-purple-50 to-pink-50 relative overflow-hidden">
                   {/* Animated background pattern */}
-                  <motion.div
+                  <div
                     className="absolute inset-0 opacity-5"
-                    animate={{
-                      backgroundPosition: ["0% 0%", "100% 100%"],
-                    }}
-                    transition={{
-                      duration: 20,
-                      repeat: Infinity,
-                      ease: "linear",
-                    }}
                     style={{
                       backgroundImage: "radial-gradient(circle at 25% 25%, #9333ea 2px, transparent 2px)",
                       backgroundSize: "20px 20px",

@@ -20,13 +20,11 @@ const AnimatedBlob: React.FC = () => {
         initial={{ opacity: 0, scale: 0.8 }}
         animate={isVisible ? {
           opacity: 1,
-          x: [0, 100, 0],
-          y: [0, -50, 0],
+          scale: 1,
         } : { opacity: 0, scale: 0.8 }}
         transition={{
           opacity: { duration: 1 },
-          x: { duration: 20, repeat: Infinity, ease: "easeInOut" },
-          y: { duration: 20, repeat: Infinity, ease: "easeInOut" },
+          scale: { duration: 1 },
         }}
       />
       
@@ -35,13 +33,11 @@ const AnimatedBlob: React.FC = () => {
         initial={{ opacity: 0, scale: 0.8 }}
         animate={isVisible ? {
           opacity: 1,
-          x: [0, -100, 0],
-          y: [0, 50, 0],
+          scale: 1,
         } : { opacity: 0, scale: 0.8 }}
         transition={{
           opacity: { duration: 1, delay: 0.2 },
-          x: { duration: 25, repeat: Infinity, ease: "easeInOut" },
-          y: { duration: 25, repeat: Infinity, ease: "easeInOut" },
+          scale: { duration: 1, delay: 0.2 },
         }}
       />
       
@@ -50,11 +46,11 @@ const AnimatedBlob: React.FC = () => {
         initial={{ opacity: 0, scale: 0.8 }}
         animate={isVisible ? {
           opacity: 1,
-          rotate: [0, 360],
+          scale: 1,
         } : { opacity: 0, scale: 0.8 }}
         transition={{
           opacity: { duration: 1, delay: 0.4 },
-          rotate: { duration: 30, repeat: Infinity, ease: "linear" },
+          scale: { duration: 1, delay: 0.4 },
         }}
       />
     </div>
