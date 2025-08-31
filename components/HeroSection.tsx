@@ -46,13 +46,9 @@ const HeroSection: React.FC = () => {
             initial={{ opacity: 0 }}
             animate={{ 
               opacity: 1,
-              y: [0, -20, 0],
-              x: [0, 10, 0],
             }}
             transition={{
               opacity: { duration: 0.5 },
-              y: { duration: 4, repeat: Infinity, ease: "easeInOut" },
-              x: { duration: 4, repeat: Infinity, ease: "easeInOut" },
             }}
           />
           
@@ -61,13 +57,9 @@ const HeroSection: React.FC = () => {
             initial={{ opacity: 0 }}
             animate={{ 
               opacity: 1,
-              y: [0, 20, 0],
-              x: [0, -10, 0],
             }}
             transition={{
               opacity: { duration: 0.5, delay: 0.2 },
-              y: { duration: 5, repeat: Infinity, ease: "easeInOut" },
-              x: { duration: 5, repeat: Infinity, ease: "easeInOut" },
             }}
           />
         </>

@@ -33,14 +33,12 @@ const FloatingElements: React.FC = () => {
           style={{ left: x, top: y }}
           initial={{ opacity: 0, scale: 0 }}
           animate={isVisible ? {
-            opacity: [0.05, 0.15, 0.05],
-            y: [0, -30, 0],
+            opacity: 0.1,
+            scale: 1,
           } : { opacity: 0, scale: 0 }}
           transition={{
-            duration: 15,
-            delay: isVisible ? delay : 0,
-            repeat: Infinity,
-            ease: "easeInOut",
+            duration: 1,
+            delay: isVisible ? delay * 0.5 : 0,
           }}
         >
           <Icon className="text-[#29224F] text-4xl md:text-6xl" />

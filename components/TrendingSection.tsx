@@ -106,25 +106,19 @@ const TrendingSection: React.FC = () => {
         <motion.div
           className="absolute top-20 right-20 w-64 h-64 bg-gradient-to-br from-yellow-200/30 to-orange-200/30 rounded-full blur-3xl"
           animate={{
-            scale: [1, 1.2, 1],
-            rotate: [0, 90, 0],
+            scale: 1,
           }}
           transition={{
-            duration: 15,
-            repeat: Infinity,
-            ease: "easeInOut",
+            duration: 1,
           }}
         />
         <motion.div
           className="absolute bottom-20 left-20 w-80 h-80 bg-gradient-to-tr from-pink-200/30 to-purple-200/30 rounded-full blur-3xl"
           animate={{
-            scale: [1, 1.3, 1],
-            rotate: [0, -90, 0],
+            scale: 1,
           }}
           transition={{
-            duration: 20,
-            repeat: Infinity,
-            ease: "easeInOut",
+            duration: 1,
           }}
         />
       </div>
@@ -145,21 +139,9 @@ const TrendingSection: React.FC = () => {
             transition={{ duration: 0.5 }}
             viewport={{ once: true }}
           >
-            <motion.div
-              animate={{ rotate: [0, 5, -5, 0] }}
-              transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-            >
-             {/* <FaFire className="text-3xl text-purple-500" /> */}
-            </motion.div>
             <h2 className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-red-500 via-pink-500 to-purple-500 bg-clip-text text-transparent">
               Top Trends These Days
             </h2>
-            <motion.div
-              animate={{ rotate: [0, -5, 5, 0] }}
-              transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-            >
-              {/* <FaFire className="text-3xl text-purple-500" /> */}
-            </motion.div>
           </motion.div>
           <p className="text-lg text-gray-600">Discover what&apos;s hot in fashion right now</p>
         </motion.div>
@@ -318,13 +300,7 @@ const TrendingSection: React.FC = () => {
                 <motion.div
                   className="bg-white rounded-2xl shadow-xl overflow-hidden h-full"
                   whileHover={{
-                    rotateY: 5,
-                    rotateX: -5,
                     scale: 1.02,
-                  }}
-                  style={{
-                    transformStyle: "preserve-3d",
-                    perspective: 1000,
                   }}
                   transition={{ duration: 0.3 }}
                 >

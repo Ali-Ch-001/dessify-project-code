@@ -107,8 +107,8 @@ const ExclusiveOfferSection: React.FC = () => {
           >
             <motion.div
               className="flex items-center justify-center gap-2 mb-4"
-              animate={{ scale: [1, 1.05, 1] }}
-              transition={{ duration: 3, repeat: Infinity }}
+              animate={{ scale: 1 }}
+              transition={{ duration: 1 }}
             >
               <FaTag className="text-3xl text-yellow-400" />
               <h2 className="text-4xl font-bold text-white">Exclusive Offer</h2>
@@ -125,8 +125,8 @@ const ExclusiveOfferSection: React.FC = () => {
                 <motion.div
                   key={idx}
                   className="relative"
-                  initial={{ scale: 0, rotate: -180 }}
-                  animate={{ scale: 1, rotate: 0 }}
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
                   transition={{ delay: idx * 0.1, type: "spring" }}
                 >
                   <motion.div
@@ -352,8 +352,8 @@ const ExclusiveOfferSection: React.FC = () => {
           >
             <motion.div
               className="inline-flex items-center gap-3 mb-4"
-              animate={{ scale: [1, 1.05, 1] }}
-              transition={{ duration: 2, repeat: Infinity }}
+              animate={{ scale: 1 }}
+              transition={{ duration: 1 }}
             >
               {/* <FaStar className="text-3xl text-purple-400" /> */}
               <h2 className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
@@ -388,16 +388,10 @@ const ExclusiveOfferSection: React.FC = () => {
                   <motion.div
                     className="bg-white p-4 md:p-6 rounded-2xl shadow-xl h-full relative overflow-hidden"
                     whileHover={{
-                      scale: 1.05,
-                      rotateY: 5,
-                      rotateX: -5,
+                      scale: 1.02,
                       boxShadow: "0 25px 50px -12px rgba(147, 51, 234, 0.3)",
                     }}
                     transition={{ duration: 0.3 }}
-                    style={{
-                      transformStyle: "preserve-3d",
-                      perspective: 1000,
-                    }}
                   >
                     {/* Gradient background on hover */}
                     <motion.div
