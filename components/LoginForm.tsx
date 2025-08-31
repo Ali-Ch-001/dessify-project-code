@@ -115,13 +115,55 @@ const LoginForm: React.FC = () => {
 
       {/* Login Button */}
       <div>
-        <button
+        <motion.button
           type="submit"
           disabled={loading || success}
-          className="w-full bg-[#29224F] text-white py-3 rounded-md hover:bg-gray-800 transition-colors font-semibold text-lg disabled:opacity-50"
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          className="w-full bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 
+                     text-white py-4 rounded-xl font-semibold text-lg disabled:opacity-50
+                     shadow-lg hover:shadow-xl transition-all duration-300
+                     relative overflow-hidden group"
         >
-          {loading ? "Logging in..." : "Login Now"}
-        </button>
+          <motion.div
+            className="absolute inset-0 bg-gradient-to-r from-purple-500 via-indigo-500 to-purple-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+            initial={false}
+          />
+          <motion.span
+            className="relative z-10 flex items-center justify-center gap-2"
+            animate={loading ? { scale: [1, 1.05, 1] } : {}}
+            transition={{ duration: 1, repeat: loading ? Infinity : 0 }}
+          >
+            {loading ? (
+              <>
+                <motion.div
+                  className="w-5 h-5 border-2 border-white border-t-transparent rounded-full"
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                />
+                Logging in...
+              </>
+            ) : (
+              <>
+                Login Now
+                <motion.svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="group-hover:translate-x-1 transition-transform duration-300"
+                >
+                  <path d="M5 12h14" />
+                  <path d="m12 5 7 7-7 7" />
+                </motion.svg>
+              </>
+            )}
+          </motion.span>
+        </motion.button>
       </div>
 
       {/* Additional Links */}
@@ -129,12 +171,6 @@ const LoginForm: React.FC = () => {
         <Link href="/forgotpassword" className="text-sm text-[#29224F] hover:underline">
           Forgot Password?
         </Link>
-        <div className="text-sm text-[#555555]">
-          Don&apos;t have an account?{" "}
-          <Link href="/sign-up" className="font-medium text-[#29224F] hover:underline">
-            Signup Now
-          </Link>
-        </div>
       </div>
     </form>
   );
