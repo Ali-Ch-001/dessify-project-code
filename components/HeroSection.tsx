@@ -10,10 +10,12 @@ const MotionLink = motion(Link);
 
 const HeroSection: React.FC = () => {
   const { scrollY } = useScroll();
-  const y = useTransform(scrollY, [0, 500], [0, 150]);
-  
+  const y = useTransform(scrollY, [0, 500], [0, 120]);
+
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [isLoaded, setIsLoaded] = useState(false);
+  const [reducedMotion, setReducedMotion] = useState(false);
+  const [pointerFine, setPointerFine] = useState(true);
   
   // Optimized mouse move handler with throttling
   const handleMouseMove = useCallback((e: MouseEvent) => {
@@ -24,22 +26,30 @@ const HeroSection: React.FC = () => {
   }, []);
   
   useEffect(() => {
+    // Feature-detect motion and pointer capabilities
+    const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+    const fine = window.matchMedia?.('(pointer: fine)').matches ?? false;
+    setReducedMotion(reduce);
+    setPointerFine(fine);
+
     // Set loaded state after initial render
     const timer = setTimeout(() => setIsLoaded(true), 100);
-    
-    // Add mouse move listener with passive option for better performance
-    window.addEventListener('mousemove', handleMouseMove, { passive: true });
-    
+
+    // Add mouse move listener with passive option for better performance only for fine pointers
+    if (fine) {
+      window.addEventListener('mousemove', handleMouseMove, { passive: true });
+    }
+
     return () => {
       clearTimeout(timer);
-      window.removeEventListener('mousemove', handleMouseMove);
+      if (fine) window.removeEventListener('mousemove', handleMouseMove);
     };
   }, [handleMouseMove]);
 
   return (
     <section className="container mx-auto flex flex-col md:flex-row items-center px-4 md:px-0 gap-8 min-h-[35vh] md:min-h-screen relative overflow-hidden">
       {/* Floating decorative elements - only animate after load */}
-      {isLoaded && (
+  {isLoaded && !reducedMotion && (
         <>
           <motion.div
             className="absolute top-20 left-10 w-20 h-20 bg-gradient-to-br from-purple-400/20 to-pink-400/20 rounded-full blur-xl"
@@ -66,13 +76,13 @@ const HeroSection: React.FC = () => {
       )}
 
       {/* Left Text Content with optimized 3D effect */}
-      <motion.div
+    <motion.div
         className="w-full md:w-1/2 text-left z-10"
         initial={{ opacity: 0, x: -30 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.6, ease: "easeOut" }}
         style={{
-          transform: isLoaded ? `perspective(1000px) rotateY(${mousePosition.x * 0.3}deg) rotateX(${-mousePosition.y * 0.3}deg)` : 'none',
+      transform: isLoaded && pointerFine ? `perspective(1000px) rotateY(${mousePosition.x * 0.3}deg) rotateX(${-mousePosition.y * 0.3}deg)` : 'none',
         }}
       >
         <motion.h1
@@ -83,7 +93,7 @@ const HeroSection: React.FC = () => {
         >
           <motion.span
             className="inline-block bg-gradient-to-r from-[#29224F] via-purple-600 to-pink-600 bg-clip-text text-transparent"
-            animate={isLoaded ? { 
+            animate={isLoaded && !reducedMotion ? { 
               backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
             } : {}}
             transition={{
@@ -165,7 +175,7 @@ const HeroSection: React.FC = () => {
           <div className="absolute inset-0 bg-gradient-to-t from-purple-900/20 to-transparent z-10 pointer-events-none" />
           
           {/* Animated border - only animate after load */}
-          {isLoaded && (
+          {isLoaded && !reducedMotion && (
             <motion.div
               className="absolute inset-0 rounded-2xl"
               style={{
@@ -193,7 +203,7 @@ const HeroSection: React.FC = () => {
           />
           
           {/* Floating fashion tags - only animate after load */}
-          {isLoaded && (
+          {isLoaded && !reducedMotion && (
             <>
               <motion.div
                 className="absolute top-1/3 right-8 bg-gradient-to-r from-purple-500 to-purple-600 text-white px-4 py-2 rounded-full shadow-lg"

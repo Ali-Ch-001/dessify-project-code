@@ -1,7 +1,8 @@
 // app/(dashboard)/closet_manager/page.tsx
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import { supabase } from '@/lib/supabaseClient';
 import { motion, AnimatePresence, Variants } from 'framer-motion';
@@ -18,7 +19,8 @@ import {
   Download,
   Share2,
   Heart,
-  Eye
+  Eye,
+  Search
 } from 'lucide-react';
 import { PanInfo } from 'framer-motion';
 
@@ -163,10 +165,64 @@ export default function ClosetManagerPage() {
     setMobileIndex(i=>({...i,[cat]:next}));
   };
 
-  // Filter items based on category
-  const filteredItems = items.filter(item => {
-    return selectedCategory === 'all' || item.category === selectedCategory;
-  });
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+  const q = (searchParams?.get('q') ?? '').trim();
+  const sortParam = (searchParams?.get('sort') ?? 'date_desc').trim();
+  const [search, setSearch] = useState<string>(q);
+  const [sort, setSort] = useState<string>(sortParam);
+
+  // Keep local search in sync if URL changes externally
+  useEffect(() => {
+    setSearch(q);
+    setSort(sortParam);
+  }, [q, sortParam]);
+
+  // Debounce and write search to URL (so it can be shared/back-forward)
+  useEffect(() => {
+    const t = setTimeout(() => {
+      const params = new URLSearchParams(searchParams?.toString() ?? '');
+      const trimmed = (search ?? '').trim();
+      if (trimmed) params.set('q', trimmed);
+      else params.delete('q');
+      if (sort) params.set('sort', sort);
+      const qs = params.toString();
+      router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+    }, 250);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search, sort, pathname, router]);
+
+  // Filter items based on category and search query (category or filename in URL)
+  const filteredItems = useMemo(() => {
+    let base = selectedCategory === 'all' ? items : items.filter(it => it.category === selectedCategory);
+    const needle = (search ?? '').trim().toLowerCase();
+    if (needle) {
+      base = base.filter(it => {
+      const inCategory = it.category.toLowerCase().includes(needle);
+      const name = it.image_url.split('/').pop() || '';
+      return inCategory || name.toLowerCase().includes(needle);
+      });
+    }
+
+    // local sort: name/category/date (id is proxy for date)
+    const [key, dir] = (sort || 'date_desc').split('_');
+    const sign = dir === 'asc' ? 1 : -1;
+    base = [...base].sort((a, b) => {
+      if (key === 'name') {
+        const an = (a.image_url.split('/').pop() || '').toLowerCase();
+        const bn = (b.image_url.split('/').pop() || '').toLowerCase();
+        return an.localeCompare(bn) * sign;
+      }
+      if (key === 'category') {
+        return a.category.localeCompare(b.category) * sign;
+      }
+      // fallback: date by id as proxy (not ideal, but stable enough client-side)
+      return (a.id > b.id ? 1 : -1) * sign;
+    });
+    return base;
+  }, [items, selectedCategory, search, sort]);
 
   const filteredGrouped = filteredItems.reduce<Record<string,WardrobeItem[]>>((acc,it)=>{
     acc[it.category] = [...(acc[it.category]||[]), it];
@@ -232,7 +288,7 @@ export default function ClosetManagerPage() {
 
       {/* Compact Filter Bar */}
       <motion.div
-        className="flex justify-between items-center"
+  className="flex justify-between items-center gap-3 flex-wrap"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
@@ -254,8 +310,69 @@ export default function ClosetManagerPage() {
             </select>
         </div>
 
+        {/* Sort controls */}
+        <div className="flex items-center gap-2">
+          <label className="text-sm text-gray-600">Sort</label>
+          <select
+            value={sort}
+            onChange={(e) => setSort(e.target.value)}
+            className="pr-6 py-2 bg-white/80 backdrop-blur-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm font-medium"
+          >
+            <option value="date_desc">Newest</option>
+            <option value="date_asc">Oldest</option>
+            <option value="name_asc">Name A–Z</option>
+            <option value="name_desc">Name Z–A</option>
+            <option value="category_asc">Category A–Z</option>
+            <option value="category_desc">Category Z–A</option>
+          </select>
+        </div>
+
+        {/* Mobile Search (visible on sm: hidden) */}
+        <div className="flex sm:hidden w-full">
+          <div className="relative w-full">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 w-4 h-4" />
+            <input
+              aria-label="Search closet"
+              placeholder="Search items..."
+              className="w-full pl-9 pr-10 py-2 bg-white/80 backdrop-blur-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            {search && (
+              <button
+                aria-label="Clear search"
+                onClick={() => setSearch('')}
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-gray-100"
+              >
+                <X className="w-4 h-4 text-gray-500" />
+              </button>
+            )}
+          </div>
+        </div>
+
+  {/* Inline Search (desktop only) */}
+  <div className="hidden sm:flex items-center gap-2 w-80 px-3 py-2 bg-white border border-gray-200 rounded-xl shadow-sm">
+          <Search className="w-4 h-4 text-gray-500" />
+          <input
+            aria-label="Search closet"
+            placeholder="Search items..."
+            className="w-full bg-transparent outline-none text-sm text-gray-700"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          {search && (
+            <button
+              aria-label="Clear search"
+              onClick={() => setSearch('')}
+              className="ml-2 text-xs px-2 py-1 rounded-full bg-purple-50 text-purple-700 hover:bg-purple-100"
+            >
+              Clear
+            </button>
+          )}
+        </div>
+
         {/* View Mode Toggle */}
-        <div className="flex bg-gray-100 rounded-lg p-1">
+        <div className="flex bg-gray-100 rounded-lg p-1 ml-auto">
           <button
             onClick={() => setViewMode('grid')}
             className={`p-1.5 rounded-md transition-all ${

@@ -99,9 +99,9 @@ export default function ProfileButton() {
         />
       </motion.div>
 
-      {/* Display name */}
+      {/* Display name (now visible on mobile too) */}
       <motion.span 
-        className="text-xs font-semibold truncate max-w-[80px] sm:max-w-[100px] bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent hidden sm:inline"
+        className="text-xs font-semibold truncate max-w-[96px] sm:max-w-[120px] bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent inline"
         animate={isHovered ? { x: 2 } : { x: 0 }}
         transition={{ duration: 0.2 }}
       >

@@ -76,6 +76,21 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+
+  /* Type scale (mobile defaults) */
+  --type-display: 2.0625rem; /* 33px */
+  --type-section: 1.625rem;  /* 26px */
+  --type-body: 1.0625rem;    /* 17px */
+  --type-caption: 0.8125rem; /* 13px */
+
+  /* Radii */
+  --radius-card: 16px;
+  --radius-control: 12px;
+
+  /* Motion tokens */
+  --motion-page: 200ms;
+  --motion-micro: 140ms;
+  --easing-standard: cubic-bezier(0.2, 0, 0, 1);
 }
 
 .dark {
@@ -120,3 +135,41 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Safe-area utility classes */
+.safe-pt-header { padding-top: 0; }
+@supports (padding: env(safe-area-inset-top)) {
+  .safe-pt-header { padding-top: env(safe-area-inset-top); }
+}
+
+/* Mobile tap target helper */
+.touch-target { min-height: 44px; min-width: 44px; }
+
+/* Type utilities */
+.text-display { font-size: var(--type-display); line-height: 1.2; font-weight: 700; letter-spacing: -0.01em; }
+.text-section { font-size: var(--type-section); line-height: 1.25; font-weight: 700; }
+.text-body    { font-size: var(--type-body); line-height: 1.55; font-weight: 500; }
+.text-caption { font-size: var(--type-caption); line-height: 1.45; font-weight: 500; }
+
+/* Radii utilities */
+.radius-card { border-radius: var(--radius-card); }
+.radius-control { border-radius: var(--radius-control); }
+
+/* Elevation */
+.elev-1 { box-shadow: 0 6px 20px rgba(0,0,0,0.06); }
+
+/* Desktop adjustments */
+@media (min-width: 768px) {
+  :root {
+    --type-display: 2.375rem; /* 38px */
+    --type-section: 1.875rem; /* 30px */
+    --type-body: 1.125rem;    /* 18px */
+    --type-caption: 0.875rem; /* 14px */
+  }
+}
+
+/* Reduced motion guard for utility animations */
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 1ms !important; animation-iteration-count: 1 !important; transition-duration: 1ms !important; }
+}
+

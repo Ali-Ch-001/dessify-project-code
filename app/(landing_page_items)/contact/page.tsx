@@ -2,18 +2,8 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
-import Link from "next/link";
+import { motion } from "framer-motion";
 import FooterSection from "@/components/FooterSection";
-
-const MotionLink = motion(Link);
-
-const navLinks = [
-  { label: "Home", href: "/" },
-  { label: "Trial", href: "/#info" },
-  { label: "Shop", href: "/products" },
-  { label: "Contact", href: "/contact" },
-];
 
 function ContactForm() {
   const [showSuccess, setShowSuccess] = useState(false);
@@ -111,115 +101,8 @@ function ContactForm() {
 }
 
 export default function ContactPage() {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
-  const navVariants = {
-    hidden: { opacity: 0, y: -10 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
-  };
-
-  const mobileMenuVariants = {
-    hidden: { opacity: 0, height: 0 },
-    visible: { opacity: 1, height: "auto", transition: { duration: 0.3 } },
-  };
-
   return (
-    <div className="min-h-screen bg-white text-[#29224F] flex flex-col">
-      {/* Navbar */}
-      <div className="bg-[#A9BAEF]">
-        <motion.nav
-          className="container mx-auto flex items-center justify-between py-4 px-4 md:px-0"
-          initial="hidden"
-          animate="visible"
-          variants={navVariants}
-        >
-          <MotionLink
-            href="/"
-            className="text-3xl font-bold text-[#29224F] hover:opacity-80"
-            whileTap={{ scale: 0.95 }}
-          >
-            Dressify
-          </MotionLink>
-
-          <div className="hidden md:flex space-x-8">
-            {navLinks.map((link, i) => (
-              <MotionLink
-                key={link.label}
-                href={link.href}
-                className="text-lg text-[#29224F] hover:underline"
-                transition={{ delay: i * 0.05 }}
-              >
-                {link.label}
-              </MotionLink>
-            ))}
-          </div>
-
-          <div className="flex items-center">
-            <MotionLink
-              href="/sign-in"
-              className="hidden md:block bg-[#29224F] text-white px-5 py-2 rounded-md hover:bg-[#8898CD] transition"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              Login
-            </MotionLink>
-            <motion.button
-              className="md:hidden ml-2 text-[#29224F]"
-              onClick={() => setIsMobileMenuOpen((o) => !o)}
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-            >
-              <svg
-                className="w-6 h-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M4 6h16M4 12h16M4 18h16"
-                />
-              </svg>
-            </motion.button>
-          </div>
-        </motion.nav>
-
-        <AnimatePresence>
-          {isMobileMenuOpen && (
-            <motion.div
-              className="md:hidden bg-[#8898CD] container mx-auto px-4 overflow-hidden"
-              initial="hidden"
-              animate="visible"
-              exit="hidden"
-              variants={mobileMenuVariants}
-            >
-              <div className="flex flex-col space-y-2 py-2">
-                {navLinks.map((link, i) => (
-                  <MotionLink
-                    key={link.label}
-                    href={link.href}
-                    className="block text-lg text-[#29224F] hover:underline"
-                    transition={{ delay: i * 0.05 }}
-                  >
-                    {link.label}
-                  </MotionLink>
-                ))}
-                <MotionLink
-                  href="/sign-in"
-                  className="block bg-[#29224F] text-white px-5 py-2 rounded-md text-center hover:bg-[#8898CD] transition"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  Login
-                </MotionLink>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-
+  <div className="min-h-screen text-[#29224F] flex flex-col">
       {/* Main Content */}
       <motion.main
         className="flex-1 container mx-auto px-4 sm:px-6 lg:px-8 py-12"

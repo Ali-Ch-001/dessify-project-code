@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import PWARegister from "@/components/PWARegister";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -26,11 +27,16 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <meta name="theme-color" content="#4f46e5" />
+        <link rel="manifest" href="/manifest.json" />
+      </head>
       <body
       suppressHydrationWarning
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         {children}
+        <PWARegister />
       </body>
     </html>
   );

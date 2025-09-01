@@ -23,69 +23,33 @@ export default function SidebarLink({
     <Link href={href}>
       <motion.div
         className={`
-          flex items-center gap-3 py-3 px-4 rounded-xl transition-all duration-300
-          relative overflow-hidden group
+          flex items-center gap-3 py-3 px-4 rounded-xl transition-all duration-200
+          relative group border border-transparent
           ${collapsed ? 'justify-center' : ''}
           ${active
-            ? "bg-gradient-to-r from-purple-500 to-indigo-600 text-white shadow-lg"
-            : "hover:bg-gradient-to-r hover:from-purple-100 hover:to-indigo-100 text-gray-700 hover:text-gray-900"
-          }
+            ? "bg-gradient-to-r from-purple-50 to-indigo-50 text-gray-900 shadow-sm border-gray-200"
+            : "text-gray-700 hover:text-gray-900 hover:bg-gradient-to-r hover:from-purple-50 hover:to-indigo-50"
+          } hover:-translate-y-0.5 hover:shadow-md
         `}
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
+        whileHover={{}}
+        whileTap={{}}
       >
-        {/* Background gradient for active state */}
+        {/* Active indicator stripe */}
         {active && (
-          <motion.div
-            className="absolute inset-0 bg-gradient-to-r from-purple-600 to-indigo-700"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.3 }}
-          />
+          <div className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-0.5 bg-indigo-600 rounded-full" />
         )}
-        
-        {/* Hover background */}
-        <motion.div
-          className="absolute inset-0 bg-gradient-to-r from-purple-100 to-indigo-100 opacity-0 group-hover:opacity-100"
-          initial={false}
-          transition={{ duration: 0.2 }}
-        />
-        
+
         {/* Content */}
         <motion.div
           className="relative z-10 flex items-center gap-3 w-full"
-          animate={active ? { x: [0, 2, 0] } : {}}
-          transition={{ duration: 0.3 }}
         >
-          <motion.div
-            animate={active ? { 
-              scale: [1, 1.1, 1],
-              rotate: [0, 5, -5, 0]
-            } : {}}
-            transition={{ duration: 0.5 }}
-            className="flex-shrink-0"
-          >
+          <div className="flex-shrink-0">
             {icon}
-          </motion.div>
+          </div>
           {label && !collapsed && (
-            <motion.span 
-              className="whitespace-nowrap font-medium flex-1"
-              initial={active ? { opacity: 0, x: -10 } : {}}
-              animate={active ? { opacity: 1, x: 0 } : {}}
-              transition={{ delay: 0.1 }}
-            >
+            <span className="whitespace-nowrap font-medium flex-1">
               {label}
-            </motion.span>
-          )}
-          
-          {/* Active indicator - positioned to the right */}
-          {active && !collapsed && (
-            <motion.div
-              className="w-2 h-2 bg-white rounded-full flex-shrink-0 ml-auto"
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: 0.2 }}
-            />
+            </span>
           )}
         </motion.div>
       </motion.div>

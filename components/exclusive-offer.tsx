@@ -21,7 +21,8 @@ const reviews = [
   { id: 6, name: "Zara", text: "Shopping has never been easier. Dressify not only helps me find new outfits but also shows me how to style them!", rating: 5 },
 ];
 
-const repeatedReviews = [...reviews, ...reviews];
+// Limit number of repeated reviews on mobile to avoid feeling spammy/fake
+const repeatedReviews = [...reviews, ...reviews].slice(0, 8);
 
 const ExclusiveOfferSection: React.FC = () => {
   const targetDate = useMemo(() => new Date("2025-12-31T23:59:59").getTime(), []);
