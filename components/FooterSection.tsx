@@ -78,24 +78,24 @@ const FooterSection: React.FC = () => {
         }}
       />
 
-      <div className="container mx-auto px-4 py-16 relative z-10">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
+      <div className="container mx-auto px-4 py-20 md:py-24 relative z-10">
+  <div className="grid grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-10 sm:gap-x-10 sm:gap-y-12 md:gap-12 items-start">
           {/* Enhanced Brand + Social */}
           <motion.div 
-            className="flex flex-col items-center md:items-start"
+            className="flex flex-col items-center md:items-start order-1 md:order-none col-span-2 md:col-span-1"
             initial={{ opacity: 0, x: -30 }}
             whileInView={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.6, delay: 0.1 }}
             viewport={{ once: true }}
           >
             <motion.h2 
-              className="text-3xl font-bold mb-6 bg-gradient-to-r from-[#29224F] via-purple-600 to-pink-600 bg-clip-text text-transparent"
+              className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-[#29224F] via-purple-600 to-pink-600 bg-clip-text text-transparent"
               whileHover={{ scale: 1.05 }}
               transition={{ duration: 0.3 }}
             >
               Dressify
             </motion.h2>
-            <p className="text-sm text-gray-600 mb-6 text-center md:text-left max-w-xs">
+            <p className="text-sm md:text-base text-gray-600 mb-6 text-center md:text-left max-w-xs md:max-w-sm">
               <span className="bg-gradient-to-r from-[#29224F] via-purple-600 to-pink-600 bg-clip-text text-transparent">
                 Revolutionizing fashion
               </span> with AI-powered style recommendations and virtual try-ons.
@@ -110,15 +110,15 @@ const FooterSection: React.FC = () => {
                   viewport={{ once: true }}
                 >
                                      <motion.div
-                     whileHover={{ scale: 1.1, rotate: 5 }}
-                     whileTap={{ scale: 0.95 }}
+                    whileHover={{ scale: 1.1, rotate: 5 }}
+                    whileTap={{ scale: 0.95 }}
                    >
                      <Link 
                        href={href} 
                        aria-label={label} 
                        target="_blank" 
                        rel="noopener noreferrer" 
-                       className={`p-3 bg-white/20 backdrop-blur-sm rounded-full hover:bg-white/30 transition-all duration-300 text-[#29224F] ${color} block group`}
+                       className={`p-3.5 md:p-3 scale-110 md:scale-100 bg-white/20 backdrop-blur-sm rounded-full hover:bg-white/30 transition-all duration-300 text-[#29224F] ${color} block group`}
                      >
                        {icon}
                      </Link>
@@ -129,73 +129,81 @@ const FooterSection: React.FC = () => {
           </motion.div>
 
           {/* Enhanced Footer navigation columns */}
-          {footerNav.map(({ heading, links }, columnIndex) => (
-            <motion.div 
-              key={heading} 
-              className="text-center md:text-left"
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: columnIndex * 0.1 + 0.2 }}
-              viewport={{ once: true }}
-            >
-              <motion.h3 
-                className="text-lg font-semibold mb-6 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent"
-                whileHover={{ scale: 1.02 }}
-                transition={{ duration: 0.3 }}
+          {/* Grouped Links: 2 columns on mobile within a full-width block */}
+          <motion.div
+            className="order-2 md:order-none col-span-2 md:col-span-2 grid grid-cols-2 gap-6 sm:gap-8 min-w-0"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+          >
+            {footerNav.map(({ heading, links }, columnIndex) => (
+              <motion.div
+                key={heading}
+                className="text-center md:text-left min-w-0"
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: columnIndex * 0.1 + 0.1 }}
+                viewport={{ once: true }}
               >
-                {heading}
-              </motion.h3>
-              <ul className="space-y-3">
-                {links.map((link, linkIndex) => (
-                  <motion.li 
-                    key={link.href}
-                    initial={{ opacity: 0, x: -20 }}
-                    whileInView={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.5, delay: linkIndex * 0.1 }}
-                    viewport={{ once: true }}
-                    onHoverStart={() => setHoveredLink(link.href)}
-                    onHoverEnd={() => setHoveredLink(null)}
-                  >
-                                         <Link 
-                       href={link.href} 
-                       className="flex items-center gap-2 text-sm hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:bg-clip-text hover:text-transparent transition-all duration-300 group"
-                     >
-                                             <motion.div
-                         animate={{ 
-                           scale: hoveredLink === link.href ? 1.2 : 1,
-                           rotate: hoveredLink === link.href ? 10 : 0
-                         }}
-                         transition={{ duration: 0.3 }}
-                         className="text-[#29224F] group-hover:text-purple-500"
-                       >
-                         {link.icon}
-                       </motion.div>
-                      <span className="group-hover:translate-x-1 transition-transform duration-300">
-                        {link.label}
-                      </span>
-                    </Link>
-                  </motion.li>
-                ))}
-              </ul>
-            </motion.div>
-          ))}
+                <motion.h3
+                  className="text-left text-2xl md:text-2xl font-semibold mb-4 md:mb-6 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent"
+                  whileHover={{ scale: 1.02 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  {heading}
+                </motion.h3>
+                <ul className="space-y-2.5 md:space-y-3">
+                  {links.map((link, linkIndex) => (
+                    <motion.li
+                      key={link.href}
+                      initial={{ opacity: 0, x: -20 }}
+                      whileInView={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.5, delay: linkIndex * 0.1 }}
+                      viewport={{ once: true }}
+                      onHoverStart={() => setHoveredLink(link.href)}
+                      onHoverEnd={() => setHoveredLink(null)}
+                    >
+                      <Link
+                        href={link.href}
+                        className="flex items-center gap-2 text-base md:text-[17px] hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:bg-clip-text hover:text-transparent transition-all duration-300 group py-2 min-h-11"
+                      >
+                        <motion.div
+                          animate={{
+                            scale: hoveredLink === link.href ? 1.2 : 1,
+                            rotate: hoveredLink === link.href ? 10 : 0,
+                          }}
+                          transition={{ duration: 0.3 }}
+                          className="text-[#29224F] group-hover:text-purple-500"
+                        >
+                          {link.icon}
+                        </motion.div>
+                        <span className="group-hover:translate-x-1 transition-transform duration-300">
+                          {link.label}
+                        </span>
+                      </Link>
+                    </motion.li>
+                  ))}
+                </ul>
+              </motion.div>
+            ))}
+          </motion.div>
 
           {/* Enhanced Newsletter */}
           <motion.div 
-            className="text-center md:text-left"
+            className="text-center md:text-left order-4 md:order-none col-span-2 md:col-span-1"
             initial={{ opacity: 0, x: 30 }}
             whileInView={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.6, delay: 0.4 }}
             viewport={{ once: true }}
           >
             <motion.h3 
-              className="text-lg font-semibold mb-6 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent"
+              className="text-2xl md:text-2xl font-semibold mb-4 md:mb-6 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent"
               whileHover={{ scale: 1.02 }}
               transition={{ duration: 0.3 }}
             >
               STAY UP TO DATE
             </motion.h3>
-            <p className="text-sm text-gray-600 mb-4">
+            <p className="text-base md:text-sm text-gray-600 mb-4">
               Get the latest <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent font-semibold">fashion trends</span> and exclusive offers delivered to your inbox.
             </p>
             <form
@@ -221,19 +229,19 @@ const FooterSection: React.FC = () => {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Your email address"
                   required
-                  className="w-full border-2 border-white/30 bg-white/20 backdrop-blur-sm px-4 py-3 rounded-xl focus:outline-none focus:border-purple-500 focus:bg-white/30 text-black text-sm transition-all duration-300"
+                  className="w-full border-2 border-white/30 bg-white/20 backdrop-blur-sm px-4 py-3.5 rounded-2xl focus:outline-none focus:border-purple-500 focus:bg-white/30 text-black text-base md:text-base transition-all duration-300"
                 />
                                  <motion.div
                    className="absolute right-3 top-1/2 transform -translate-y-1/2"
                    animate={{ x: email ? 0 : -10, opacity: email ? 1 : 0.5 }}
                    transition={{ duration: 0.3 }}
                  >
-                   <FiMail size={18} className="text-[#29224F]" />
+                    <FiMail size={20} className="text-[#29224F]" />
                  </motion.div>
               </motion.div>
               <motion.button
                 type="submit"
-                className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-3 rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all duration-300 text-sm font-semibold flex items-center justify-center gap-2 group"
+                className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-3.5 rounded-2xl hover:from-purple-700 hover:to-pink-700 transition-all duration-300 text-lg md:text-lg font-semibold flex items-center justify-center gap-2 group min-h-12"
                 whileHover={{ scale: 1.02, boxShadow: "0 10px 25px rgba(147, 51, 234, 0.3)" }}
                 whileTap={{ scale: 0.98 }}
               >
@@ -242,7 +250,7 @@ const FooterSection: React.FC = () => {
                    animate={{ x: [0, 5, 0] }}
                    transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
                  >
-                   <FiArrowRight size={16} className="text-white" />
+                    <FiArrowRight size={18} className="text-white" />
                  </motion.div>
               </motion.button>
             </form>
@@ -258,7 +266,7 @@ const FooterSection: React.FC = () => {
         transition={{ duration: 0.8, delay: 0.6 }}
         viewport={{ once: true }}
       >
-        <div className="container mx-auto px-4 py-6 flex flex-col md:flex-row items-center justify-between text-sm">
+  <div className="container mx-auto px-4 py-6 flex flex-col md:flex-row items-center justify-between text-base md:text-lg">
                     <motion.div 
             className="flex items-center gap-2"
             whileHover={{ scale: 1.02 }}

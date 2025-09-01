@@ -47,7 +47,7 @@ const HeroSection: React.FC = () => {
   }, [handleMouseMove]);
 
   return (
-    <section className="container mx-auto flex flex-col md:flex-row items-center px-4 md:px-0 gap-8 min-h-[35vh] md:min-h-screen relative overflow-hidden">
+  <section className="container mx-auto flex flex-col md:flex-row items-center px-4 md:px-0 gap-8 min-h-[40vh] md:min-h-screen relative overflow-hidden">
       {/* Floating decorative elements - only animate after load */}
   {isLoaded && !reducedMotion && (
         <>
@@ -165,7 +165,7 @@ const HeroSection: React.FC = () => {
         style={{ y }}
       >
         <motion.div
-          className="relative w-full max-w-[500px] aspect-[3/4] overflow-hidden rounded-2xl shadow-2xl"
+          className="relative w-full max-w-[360px] sm:max-w-[420px] md:max-w-[500px] aspect-[3/4] overflow-hidden rounded-2xl shadow-2xl"
           whileHover={{ scale: 1.02 }}
           style={{
             transform: isLoaded ? `perspective(1000px) rotateY(${-mousePosition.x * 0.2}deg) rotateX(${mousePosition.y * 0.2}deg)` : 'none',

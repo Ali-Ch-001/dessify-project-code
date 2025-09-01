@@ -69,9 +69,10 @@ const TrendingSection: React.FC = () => {
 
   const [currentSlide, setCurrentSlide] = useState(0);
   const groupIntoSlides = (items: Product[]) => {
-    const slides = [];
-    for (let i = 0; i < items.length; i += 2) {
-      slides.push(items.slice(i, i + 2));
+    // On mobile, show one larger card per slide for clarity
+    const slides = [] as Product[][];
+    for (let i = 0; i < items.length; i += 1) {
+      slides.push(items.slice(i, i + 1));
     }
     return slides;
   };
@@ -194,7 +195,7 @@ const TrendingSection: React.FC = () => {
           ))}
         </motion.div>
 
-        {/* Mobile Slider with enhanced animations */}
+        {/* Mobile Slider - single large card per slide for better legibility */}
         <div className="block md:hidden">
           <div className="relative flex items-center">
             <AnimatePresence>
@@ -213,7 +214,7 @@ const TrendingSection: React.FC = () => {
               )}
             </AnimatePresence>
             
-            <div className="w-full overflow-hidden px-12">
+      <div className="w-full overflow-hidden px-6">
               <AnimatePresence mode="wait">
                 <motion.div
                   key={currentSlide}
@@ -221,21 +222,21 @@ const TrendingSection: React.FC = () => {
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -100 }}
                   transition={{ duration: 0.5, ease: "easeOut" }}
-                  className="flex gap-4"
+          className="flex gap-4"
                 >
                   {mobileSlides[currentSlide].map((product) => (
                     <motion.div
-                      key={product.id}
-                      className="flex-1 bg-white rounded-2xl shadow-xl overflow-hidden"
-                      whileHover={{ scale: 1.05 }}
+            key={product.id}
+            className="w-full bg-white rounded-2xl shadow-xl overflow-hidden"
+            whileHover={{ scale: 1.02 }}
                     >
-                      <div className="relative h-[250px] overflow-hidden">
+            <div className="relative h-[320px] overflow-hidden">
                         <Image
                           src={product.imgSrc}
                           alt={product.title}
                           width={300}
                           height={300}
-                          className="object-cover w-full h-full"
+              className="object-cover w-full h-full"
                         />
                         <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full">
                           <div className="flex items-center gap-1">
@@ -244,11 +245,11 @@ const TrendingSection: React.FC = () => {
                           </div>
                         </div>
                       </div>
-                      <div className="p-4">
-                        <h3 className="font-bold text-lg mb-2 text-[#29224F]">
+            <div className="p-5">
+            <h3 className="font-bold text-xl mb-2 text-[#29224F]">
                           {product.title}
                         </h3>
-                        <p className="text-2xl font-bold text-purple-600">
+            <p className="text-3xl font-extrabold text-purple-600">
                           {product.price}
                         </p>
                       </div>
