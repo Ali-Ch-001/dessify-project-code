@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
+import { supabase } from "@/lib/supabaseClient";
 
 import { 
   Upload,
@@ -18,8 +19,17 @@ import {
   X,
   Sparkles,
   Zap,
-  Wand2
+  Wand2,
+  FolderOpen,
+  Filter,
+  Check
 } from "lucide-react";
+
+type WardrobeItem = {
+  id: string;
+  image_url: string;
+  category: string;
+};
 
 export default function VirtualTryOnPage() {
   const [personImage, setPersonImage] = useState<File | null>(null);
@@ -40,6 +50,14 @@ export default function VirtualTryOnPage() {
   const [error, setError] = useState<string | null>(null);
   const [showPopup, setShowPopup] = useState(false);
   
+  // Wardrobe-related state
+  const [wardrobeItems, setWardrobeItems] = useState<WardrobeItem[]>([]);
+  const [selectedWardrobeItem, setSelectedWardrobeItem] = useState<WardrobeItem | null>(null);
+  const [wardrobeCategories, setWardrobeCategories] = useState<string[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [showWardrobe, setShowWardrobe] = useState(false);
+  const [isLoadingWardrobe, setIsLoadingWardrobe] = useState(false);
+  
   // Model parameters
   const [vtModelType] = useState("viton_hd");
   const [vtGarmentType, setVtGarmentType] = useState("upper_body");
@@ -51,6 +69,114 @@ export default function VirtualTryOnPage() {
   // Add a small delay between background removal requests to avoid rate limiting
   let lastBackgroundRemovalTime = 0;
   const BACKGROUND_REMOVAL_COOLDOWN = 2000; // 2 seconds between requests
+
+  // Define clothing categories for virtual try-on (exclude accessories)
+  const clothingCategories = useMemo(() => [
+    't-shirt', 'dress shirt', 'blouse', 'tank top', 'polo shirt', 'henley',
+    'jeans', 'pants', 'trousers', 'shorts', 'skirt', 'dress', 'jumpsuit',
+    'sweater', 'hoodie', 'cardigan', 'jacket', 'blazer', 'coat', 'suit',
+    'leggings', 'yoga pants', 'cargo pants', 'chinos', 'khakis'
+  ], []);
+
+  const fetchWardrobeItems = useCallback(async () => {
+    setIsLoadingWardrobe(true);
+    try {
+      const { data: { user }, error: authErr } = await supabase.auth.getUser();
+      if (authErr || !user) {
+        console.error('Auth error:', authErr);
+        setError('Please log in to access your wardrobe');
+        return;
+      }
+
+      console.log('Fetching wardrobe for user:', user.id);
+      const { data: items, error: fetchErr } = await supabase
+        .from('userwardrobe')
+        .select('id, image_url, category')
+        .eq('user_id', user.id);
+
+      if (fetchErr) {
+        console.error('Error fetching wardrobe:', fetchErr);
+        setError('Failed to load wardrobe items');
+        return;
+      }
+
+      console.log('Wardrobe items fetched:', items);
+      setWardrobeItems(items as WardrobeItem[]);
+      
+      // Extract unique categories (only clothing, not accessories)
+      const clothingItems = items?.filter(item => 
+        clothingCategories.some(category => 
+          item.category.toLowerCase().includes(category.toLowerCase())
+        )
+      ) || [];
+      
+      // Only show clothing categories in the filter buttons
+      const clothingOnlyCategories = clothingItems
+        .map(item => item.category)
+        .filter(category => 
+          clothingCategories.some(clothingCategory => 
+            category.toLowerCase().includes(clothingCategory.toLowerCase())
+          )
+        );
+      
+      const categories = ['all', ...new Set(clothingOnlyCategories)];
+      setWardrobeCategories(categories);
+      console.log('Categories extracted:', categories);
+    } catch (error) {
+      console.error('Error fetching wardrobe items:', error);
+      setError('Failed to load wardrobe items');
+    } finally {
+      setIsLoadingWardrobe(false);
+    }
+  }, [clothingCategories]);
+
+  // Fetch wardrobe items on component mount
+  useEffect(() => {
+    fetchWardrobeItems();
+  }, [fetchWardrobeItems]);
+
+  const handleWardrobeItemSelect = async (item: WardrobeItem) => {
+    setSelectedWardrobeItem(item);
+    setShowWardrobe(false);
+    
+    try {
+      // Convert wardrobe item URL to File for processing
+      const response = await fetch(item.image_url);
+      const blob = await response.blob();
+      const file = new File([blob], `wardrobe-${item.id}.jpg`, { type: 'image/jpeg' });
+      
+      setGarmentImage(file);
+      
+      // Process the garment image (remove background)
+      setIsRemovingBackground(true);
+      setBackgroundRemovalProgress({
+        fileName: `Wardrobe Item - ${item.category}`,
+        type: 'garment'
+      });
+      
+      const processedFile = await removeBackground(file);
+      setProcessedGarmentImage(processedFile);
+      
+    } catch (error) {
+      console.error('Error processing wardrobe item:', error);
+      setError('Failed to process selected wardrobe item');
+    } finally {
+      setIsRemovingBackground(false);
+      setBackgroundRemovalProgress(null);
+    }
+  };
+
+  const filteredWardrobeItems = wardrobeItems.filter(item => {
+    // First filter by clothing categories only
+    const isClothing = clothingCategories.some(category => 
+      item.category.toLowerCase().includes(category.toLowerCase())
+    );
+    
+    // Then filter by selected category
+    const matchesCategory = selectedCategory === 'all' || item.category === selectedCategory;
+    
+    return isClothing && matchesCategory;
+  });
 
   const removeBackground = async (file: File): Promise<File> => {
     const formData = new FormData();
@@ -490,12 +616,15 @@ export default function VirtualTryOnPage() {
             </motion.div>
             
             <h1 className="text-3xl font-bold mb-2">Virtual Try-On</h1>
-            <p className="text-purple-100 text-base mb-3">AI-powered 2D virtual try-on with advanced computer vision</p>
+            <p className="text-purple-100 text-base mb-3">AI-powered 2D virtual try-on with your wardrobe or custom images</p>
             
             {/* Badges */}
             <div className="flex items-center justify-center gap-2">
               <div className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-xs font-medium border border-white/30">
                 AI Powered
+              </div>
+              <div className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-xs font-medium border border-white/30">
+                Wardrobe Integration
               </div>
               <div className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-xs font-medium border border-white/30">
                 Real-time
@@ -516,7 +645,7 @@ export default function VirtualTryOnPage() {
               ? 'xl:col-span-2' 
               : 'xl:col-span-2'
           }`}>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               {/* Person Image Upload - Compact */}
               <div className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 rounded-2xl p-4 border border-blue-200/50 shadow-lg">
                 <div className="flex items-center gap-2 mb-3">
@@ -576,63 +705,121 @@ export default function VirtualTryOnPage() {
                 </div>
               </div>
 
-              {/* Garment Image Upload - Compact */}
-              <div className="bg-gradient-to-br from-purple-50 via-pink-50 to-rose-50 rounded-2xl p-4 border border-purple-200/50 shadow-lg">
+              {/* Garment Selection - Enhanced with Wardrobe */}
+              <div className="bg-gradient-to-br from-purple-50 via-pink-50 to-rose-50 rounded-2xl p-3 sm:p-4 border border-purple-200/50 shadow-lg">
                 <div className="flex items-center gap-2 mb-3">
-                  <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
-                    <Shirt className="w-4 h-4 text-white" />
+                  <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
+                    <Shirt className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
                   </div>
-                  <span className="font-semibold text-gray-900">Garment Image</span>
+                  <span className="font-semibold text-gray-900 text-sm sm:text-base">Garment Selection</span>
                 </div>
-                <div 
-                  className="border-2 border-dashed border-purple-300 rounded-xl p-4 text-center cursor-pointer hover:border-purple-500 hover:bg-purple-50/50 transition-all duration-200 group"
-                  onClick={() => !isRemovingBackground && garmentImageRef.current?.click()}
-                >
-                  {garmentImage ? (
-                    <div className="space-y-2">
-                      <div className="relative inline-block">
-                        <Image 
-                          src={URL.createObjectURL(processedGarmentImage || garmentImage)} 
-                          alt="Garment" 
-                          width={80}
-                          height={80}
-                          className="w-20 h-20 object-cover rounded-lg shadow-md border-2 border-white"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent rounded-lg"></div>
-                        {isRemovingBackground && backgroundRemovalProgress?.type === 'garment' && (
-                          <div className="absolute inset-0 bg-black/50 rounded-lg flex items-center justify-center">
-                            <div className="text-center">
-                              <Loader2 className="w-3 h-3 text-white animate-spin mx-auto mb-1" />
-                              <p className="text-xs text-white">Processing...</p>
+                
+                {/* Garment Selection Options */}
+                <div className="space-y-3">
+                  {/* Wardrobe Selection Button */}
+                  <button
+                    onClick={() => setShowWardrobe(true)}
+                    disabled={isRemovingBackground || isLoadingWardrobe}
+                    className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white py-2.5 sm:py-2 px-3 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium flex items-center justify-center gap-2"
+                  >
+                    {isLoadingWardrobe ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <FolderOpen className="w-4 h-4" />
+                    )}
+                    Select from Wardrobe
+                  </button>
+                  
+                  {/* Or Divider */}
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 h-px bg-gray-300"></div>
+                    <span className="text-xs text-gray-500">or</span>
+                    <div className="flex-1 h-px bg-gray-300"></div>
+                  </div>
+                  
+                  {/* File Upload Option */}
+                  <div 
+                    className="border-2 border-dashed border-purple-300 rounded-xl p-3 text-center cursor-pointer hover:border-purple-500 hover:bg-purple-50/50 transition-all duration-200 group"
+                    onClick={() => !isRemovingBackground && garmentImageRef.current?.click()}
+                  >
+                    {garmentImage && !selectedWardrobeItem ? (
+                      <div className="space-y-2">
+                        <div className="relative inline-block">
+                          <Image 
+                            src={URL.createObjectURL(processedGarmentImage || garmentImage)} 
+                            alt="Garment" 
+                            width={60}
+                            height={60}
+                            className="w-15 h-15 object-cover rounded-lg shadow-md border-2 border-white"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent rounded-lg"></div>
+                          {isRemovingBackground && backgroundRemovalProgress?.type === 'garment' && (
+                            <div className="absolute inset-0 bg-black/50 rounded-lg flex items-center justify-center">
+                              <div className="text-center">
+                                <Loader2 className="w-3 h-3 text-white animate-spin mx-auto mb-1" />
+                                <p className="text-xs text-white">Processing...</p>
+                              </div>
                             </div>
-                          </div>
-                        )}
+                          )}
+                        </div>
+                        <p className="text-xs text-gray-700 font-medium truncate">{garmentImage.name}</p>
+                        <div className="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium inline-block">
+                          {processedGarmentImage && processedGarmentImage !== garmentImage ? '✓ Processed' : '✓ Uploaded'}
+                        </div>
                       </div>
-                      <p className="text-xs text-gray-700 font-medium truncate">{garmentImage.name}</p>
-                      <div className="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium inline-block">
-                        {processedGarmentImage && processedGarmentImage !== garmentImage ? '✓ Processed' : '✓ Uploaded'}
+                    ) : (
+                      <div className="space-y-1">
+                        <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center mx-auto group-hover:bg-purple-200 transition-colors">
+                          <Upload className="w-3 h-3 text-purple-500" />
+                        </div>
+                        <div>
+                          <p className="text-xs font-medium text-gray-700">Upload new image</p>
+                          <p className="text-xs text-gray-500">PNG, JPG, WEBP</p>
+                        </div>
                       </div>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center mx-auto group-hover:bg-purple-200 transition-colors">
-                        <Upload className="w-4 h-4 text-purple-500" />
-                      </div>
-                      <div>
-                        <p className="text-xs font-medium text-gray-700">Upload garment image</p>
-                        <p className="text-xs text-gray-500">PNG, JPG, WEBP</p>
-                      </div>
-                    </div>
-                  )}
-                  <input
-                    ref={garmentImageRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => handleImageUpload(e, 'garment')}
-                    className="hidden"
-                    disabled={isRemovingBackground}
-                  />
+                    )}
+                    <input
+                      ref={garmentImageRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        setSelectedWardrobeItem(null); // Clear wardrobe selection when uploading new file
+                        handleImageUpload(e, 'garment');
+                      }}
+                      className="hidden"
+                      disabled={isRemovingBackground}
+                    />
+                  </div>
                 </div>
+                
+                {/* Selected Wardrobe Item Display */}
+                {selectedWardrobeItem && (
+                  <div className="mt-3 p-2 bg-white/80 rounded-lg border border-purple-200">
+                    <div className="flex items-center gap-2">
+                      <Image 
+                        src={selectedWardrobeItem.image_url} 
+                        alt={selectedWardrobeItem.category} 
+                        width={40}
+                        height={40}
+                        className="w-10 h-10 object-cover rounded-lg"
+                      />
+                      <div className="flex-1">
+                        <p className="text-xs font-medium text-gray-800 capitalize">{selectedWardrobeItem.category}</p>
+                        <p className="text-xs text-gray-500">From your wardrobe</p>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setSelectedWardrobeItem(null);
+                          setGarmentImage(null);
+                          setProcessedGarmentImage(null);
+                        }}
+                        className="text-gray-400 hover:text-red-500 transition-colors"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -917,6 +1104,170 @@ export default function VirtualTryOnPage() {
                   <Download className="w-4 h-4 mr-2 inline" />
                   Download Result
                 </motion.button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Wardrobe Selection Modal */}
+      <AnimatePresence>
+        {showWardrobe && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4"
+            onClick={() => setShowWardrobe(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              className="bg-white/95 backdrop-blur-xl rounded-2xl p-4 sm:p-6 max-w-6xl w-full mx-2 sm:mx-4 shadow-2xl border border-white/20 max-h-[95vh] sm:max-h-[90vh] overflow-hidden flex flex-col"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between mb-4 sm:mb-6">
+                <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <FolderOpen className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-lg sm:text-xl font-bold text-gray-900 truncate">Select from Wardrobe</h3>
+                    <p className="text-xs sm:text-sm text-gray-600 hidden sm:block">Choose a garment from your uploaded wardrobe</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+                  <button
+                    onClick={fetchWardrobeItems}
+                    disabled={isLoadingWardrobe}
+                    className="p-1.5 sm:p-2 hover:bg-gray-100 rounded-full transition-colors disabled:opacity-50"
+                    title="Refresh wardrobe"
+                  >
+                    <Loader2 className={`w-4 h-4 sm:w-5 sm:h-5 text-gray-500 ${isLoadingWardrobe ? 'animate-spin' : ''}`} />
+                  </button>
+                  <button
+                    onClick={() => setShowWardrobe(false)}
+                    className="p-1.5 sm:p-2 hover:bg-gray-100 rounded-full transition-colors"
+                  >
+                    <X className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Category Filter */}
+              {wardrobeCategories.length > 1 && (
+                <div className="mb-4 sm:mb-6">
+                  <div className="flex items-center gap-2 mb-2 sm:mb-3">
+                    <Filter className="w-3 h-3 sm:w-4 sm:h-4 text-gray-600" />
+                    <span className="text-xs sm:text-sm font-medium text-gray-700">Filter by category:</span>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5 sm:gap-2">
+                    {wardrobeCategories.map((category) => (
+                      <button
+                        key={category}
+                        onClick={() => setSelectedCategory(category)}
+                        className={`px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium transition-all duration-200 ${
+                          selectedCategory === category
+                            ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        {category === 'all' ? 'All Items' : category}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Wardrobe Items Grid */}
+              <div className="flex-1 overflow-y-auto">
+                {isLoadingWardrobe ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="text-center">
+                      <Loader2 className="w-8 h-8 animate-spin text-purple-500 mx-auto mb-3" />
+                      <p className="text-sm text-gray-600">Loading your wardrobe...</p>
+                    </div>
+                  </div>
+                ) : filteredWardrobeItems.length === 0 ? (
+                  <div className="text-center py-12">
+                    <FolderOpen className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                    <p className="text-gray-600 mb-2">
+                      {selectedCategory === 'all' 
+                        ? 'No clothing items in your wardrobe yet' 
+                        : `No ${selectedCategory} items found`
+                      }
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      Upload some clothing items to your wardrobe first
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-2 sm:gap-3 p-2 sm:p-4">
+                    {filteredWardrobeItems.map((item) => (
+                      <motion.div
+                        key={item.id}
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        className="relative group cursor-pointer"
+                        onClick={() => handleWardrobeItemSelect(item)}
+                      >
+                        <div className="relative bg-white rounded-lg sm:rounded-xl overflow-hidden shadow-md sm:shadow-lg border-2 border-transparent group-hover:border-purple-300 transition-all duration-200">
+                          <div className="aspect-square relative">
+                            <Image
+                              src={item.image_url}
+                              alt={item.category}
+                              fill
+                              className="object-cover"
+                              sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, (max-width: 1280px) 20vw, 16vw"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+                            
+                            {/* Selection indicator */}
+                            {selectedWardrobeItem?.id === item.id && (
+                              <div className="absolute top-1 right-1 w-4 h-4 sm:w-5 sm:h-5 bg-green-500 rounded-full flex items-center justify-center shadow-lg">
+                                <Check className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-white" />
+                              </div>
+                            )}
+                            
+                            {/* Hover overlay */}
+                            <div className="absolute inset-0 bg-purple-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
+                              <div className="bg-white/90 backdrop-blur-sm rounded-full p-1 sm:p-1.5">
+                                <Check className="w-3 h-3 sm:w-4 sm:h-4 text-purple-600" />
+                              </div>
+                            </div>
+                          </div>
+                          
+                          {/* Category label */}
+                          <div className="p-1 sm:p-1.5 bg-white">
+                            <p className="text-xs font-medium text-gray-800 capitalize truncate text-center">
+                              {item.category}
+                            </p>
+                          </div>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Footer */}
+              <div className="mt-4 sm:mt-6 pt-3 sm:pt-4 border-t border-gray-200">
+                <div className="flex flex-col sm:flex-row justify-between items-center gap-3 sm:gap-0">
+                  <p className="text-xs sm:text-sm text-gray-600">
+                    {filteredWardrobeItems.length} item{filteredWardrobeItems.length !== 1 ? 's' : ''} found
+                  </p>
+                  <button
+                    onClick={() => setShowWardrobe(false)}
+                    className="w-full sm:w-auto px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium"
+                  >
+                    Close
+                  </button>
+                </div>
               </div>
             </motion.div>
           </motion.div>

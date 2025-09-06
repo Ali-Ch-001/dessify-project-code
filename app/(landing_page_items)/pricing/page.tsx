@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import Link from "next/link";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, useScroll, useTransform } from "framer-motion";
 import FooterSection from "@/components/FooterSection";
 
 const plans = [
@@ -49,187 +49,243 @@ const plans = [
   },
 ];
 
-const navLinks = [
-  { label: "Home", href: "/" },
-  { label: "Trial", href: "/#info" },
-  { label: "Shop", href: "/products" },
-  { label: "Contact", href: "/contact" },
-];
-
-const MotionLink = motion(Link);
-
 export default function PricingPage() {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
-  const navVariants = {
-    hidden: { opacity: 0, y: -10 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
-  };
-
-  const mobileMenuVariants = {
-    hidden: { opacity: 0, height: 0 },
-    visible: { opacity: 1, height: "auto", transition: { duration: 0.3 } },
-  };
+  const { scrollYProgress } = useScroll();
+  const y = useTransform(scrollYProgress, [0, 1], [0, -50]);
+  const opacity = useTransform(scrollYProgress, [0, 0.5], [1, 0.8]);
 
   return (
-    <div className="flex flex-col min-h-screen bg-white text-[#29224F]">
-      {/* ✅ Updated Navbar */}
-      <div className="bg-[#A9BAEF]">
-        <motion.nav
-          className="container mx-auto flex items-center justify-between py-4 px-4 md:px-0"
-          initial="hidden"
-          animate="visible"
-          variants={navVariants}
-        >
-          <MotionLink
-            href="/"
-            className="text-3xl font-bold text-[#29224F] hover:opacity-80"
-            whileTap={{ scale: 0.95 }}
-          >
-            Dressify
-          </MotionLink>
-
-          <div className="hidden md:flex space-x-8">
-            {navLinks.map(({ label, href }, i) => (
-              <MotionLink
-                key={label}
-                href={href}
-                className="text-lg text-[#29224F] hover:underline"
-                transition={{ delay: i * 0.05 }}
-              >
-                {label}
-              </MotionLink>
-            ))}
-          </div>
-
-          <div className="flex items-center">
-            <MotionLink
-              href="/sign-in"
-              className="hidden md:block bg-[#29224F] text-white px-5 py-2 rounded-md hover:bg-[#8898CD]"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              Login
-            </MotionLink>
-            <motion.button
-              className="md:hidden ml-2 text-[#29224F]"
-              onClick={() => setIsMobileMenuOpen((o) => !o)}
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-            >
-              <svg
-                className="w-6 h-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M4 6h16M4 12h16M4 18h16"
-                />
-              </svg>
-            </motion.button>
-          </div>
-        </motion.nav>
-
-        <AnimatePresence>
-          {isMobileMenuOpen && (
-            <motion.div
-              className="md:hidden bg-[#8898CD] container mx-auto px-4 overflow-hidden"
-              initial="hidden"
-              animate="visible"
-              exit="hidden"
-              variants={mobileMenuVariants}
-            >
-              <div className="flex flex-col space-y-2 py-2">
-                {navLinks.map(({ label, href }, i) => (
-                  <MotionLink
-                    key={label}
-                    href={href}
-                    className="block text-lg text-[#29224F] hover:underline"
-                    transition={{ delay: i * 0.05 }}
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    {label}
-                  </MotionLink>
-                ))}
-                <MotionLink
-                  href="/sign-in"
-                  className="block bg-[#29224F] text-white px-5 py-2 rounded-md text-center hover:bg-[#8898CD]"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  Login
-                </MotionLink>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-
-      {/* Header */}
-      <header className="bg-white py-12">
-        <div className="container mx-auto text-center px-4">
-          <h1 className="text-5xl font-extrabold text-[#29224F]">
-            Our Pricing Plans
-          </h1>
-          <p className="mt-4 text-lg text-gray-600">
-            Flexible plans to fit your style and budget.
-          </p>
+    <div className="flex flex-col min-h-screen bg-gradient-to-br from-[#F3E8FF] via-white to-[#F3E8FF] text-[#29224F]">
+      {/* Hero Section */}
+      <motion.section 
+        className="relative overflow-hidden py-12 sm:py-16 lg:py-20 xl:py-24"
+        style={{ y, opacity }}
+      >
+        {/* Animated Background Elements */}
+        <div className="absolute inset-0 overflow-hidden">
+          <motion.div
+            className="absolute top-20 left-10 w-32 h-32 bg-gradient-to-br from-purple-200/30 to-indigo-200/30 rounded-full blur-3xl"
+            animate={{
+              x: [0, 30, 0],
+              y: [0, -20, 0],
+              scale: [1, 1.1, 1],
+            }}
+            transition={{
+              duration: 8,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+          />
+          <motion.div
+            className="absolute top-40 right-20 w-40 h-40 bg-gradient-to-br from-indigo-200/30 to-purple-200/30 rounded-full blur-3xl"
+            animate={{
+              x: [0, -25, 0],
+              y: [0, 15, 0],
+              scale: [1, 0.9, 1],
+            }}
+            transition={{
+              duration: 10,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+          />
+          <motion.div
+            className="absolute bottom-20 left-1/3 w-24 h-24 bg-gradient-to-br from-purple-300/20 to-indigo-300/20 rounded-full blur-2xl"
+            animate={{
+              x: [0, 20, 0],
+              y: [0, -10, 0],
+              rotate: [0, 180, 360],
+            }}
+            transition={{
+              duration: 12,
+              repeat: Infinity,
+              ease: "linear",
+            }}
+          />
         </div>
-      </header>
+
+        <div className="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div
+            className="text-center max-w-4xl mx-auto"
+            initial={{ y: 50, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+          >
+            {/* Pricing Badge */}
+            <motion.div
+              className="inline-flex items-center gap-2 sm:gap-3 bg-white/80 backdrop-blur-sm rounded-full px-4 sm:px-6 py-2 sm:py-3 mb-6 sm:mb-8 shadow-lg border border-purple-200/50"
+              whileHover={{ scale: 1.05 }}
+              transition={{ type: "spring", stiffness: 300 }}
+            >
+              <div className="w-2 h-2 sm:w-3 sm:h-3 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-full animate-pulse" />
+              <span className="text-[#29224F] font-semibold text-sm sm:text-base">Pricing Plans</span>
+            </motion.div>
+
+            {/* Main Title */}
+            <motion.h1
+              className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-extrabold mb-6 sm:mb-8 leading-tight"
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 0.8, delay: 0.4 }}
+            >
+              <span className="bg-gradient-to-r from-[#29224F] via-purple-700 to-indigo-700 bg-clip-text text-transparent">
+                Our Pricing
+              </span>
+              <br />
+              <span className="text-[#29224F]">Plans</span>
+            </motion.h1>
+
+            {/* Subtitle */}
+            <motion.p
+              className="text-base sm:text-lg md:text-xl lg:text-2xl text-[#29224F]/80 leading-relaxed max-w-3xl mx-auto mb-8 sm:mb-12 px-4"
+              initial={{ y: 30, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ duration: 0.8, delay: 0.6 }}
+            >
+              Flexible plans to fit your 
+              <span className="font-semibold text-[#29224F]"> style and budget</span>
+            </motion.p>
+          </motion.div>
+        </div>
+      </motion.section>
 
       {/* Pricing Cards */}
-      <main className="flex-grow bg-[#F9FAFB] py-16 px-4">
-        <div className="container mx-auto grid gap-8 grid-cols-1 md:grid-cols-3">
-          {plans.map((plan) => (
-            <div
-              key={plan.key}
-              className={`flex flex-col rounded-2xl border ${
-                plan.featured
-                  ? "border-[#29224F] bg-white shadow-lg"
-                  : "border-gray-200 bg-white"
-              }`}
-            >
-              <div className="p-8 flex-grow flex flex-col">
-                <h2 className="text-2xl font-semibold text-[#29224F] mb-2">
-                  {plan.title}
-                </h2>
-                {plan.price && (
-                  <p className="text-4xl font-bold text-[#29224F] mb-4">
-                    {plan.price}
-                  </p>
+      <motion.main 
+        className="flex-grow py-12 sm:py-16 lg:py-20"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 1.2 }}
+      >
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div 
+            className="grid gap-6 sm:gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
+            initial={{ y: 50, opacity: 0 }}
+            whileInView={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.8 }}
+            viewport={{ once: true }}
+          >
+            {plans.map((plan, index) => (
+              <motion.div
+                key={plan.key}
+                className={`group relative flex flex-col rounded-2xl sm:rounded-3xl border overflow-hidden ${
+                  plan.featured
+                    ? "border-purple-300 bg-gradient-to-br from-white via-purple-50/30 to-white shadow-2xl scale-105 sm:scale-110"
+                    : "border-purple-200/50 bg-gradient-to-br from-white via-[#FAFAFC] to-white shadow-xl hover:shadow-2xl"
+                }`}
+                initial={{ y: 50, opacity: 0, scale: 0.9 }}
+                whileInView={{ y: 0, opacity: 1, scale: 1 }}
+                transition={{ duration: 0.6, delay: index * 0.2 }}
+                viewport={{ once: true }}
+                whileHover={{ 
+                  y: -8,
+                  boxShadow: plan.featured 
+                    ? "0 25px 50px rgba(139, 92, 246, 0.25)"
+                    : "0 25px 50px rgba(139, 92, 246, 0.15)"
+                }}
+              >
+                {/* Featured Badge */}
+                {plan.featured && (
+                  <motion.div
+                    className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10"
+                    initial={{ scale: 0, rotate: -180 }}
+                    whileInView={{ scale: 1, rotate: 0 }}
+                    transition={{ duration: 0.6, delay: 0.3 + index * 0.2 }}
+                    viewport={{ once: true }}
+                  >
+                    <div className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-4 py-1 rounded-full text-sm font-semibold shadow-lg">
+                      Most Popular
+                    </div>
+                  </motion.div>
                 )}
-                <ul className="space-y-4 flex-grow">
-                  {plan.features.map((feat) => (
-                    <li key={feat} className="flex items-center text-gray-700">
-                      <span className="w-6 h-6 mr-2 bg-[#29224F] text-white rounded-full text-xs flex items-center justify-center">
-                        ✔
-                      </span>
-                      {feat}
-                    </li>
-                  ))}
-                </ul>
-                <Link
-                  href={plan.href}
-                  className={`mt-8 block text-center py-3 rounded-md font-semibold ${
-                    plan.featured
-                      ? "bg-[#29224F] text-white hover:opacity-90"
-                      : "border border-[#29224F] text-[#29224F] hover:bg-white hover:opacity-90"
-                  }`}
-                >
-                  {plan.btnText}
-                </Link>
-              </div>
-            </div>
-          ))}
+
+                {/* Decorative Background */}
+                <div className="absolute top-0 right-0 w-16 h-16 sm:w-24 sm:h-24 lg:w-32 lg:h-32 bg-gradient-to-br from-purple-100/50 to-indigo-100/50 rounded-full blur-2xl" />
+                <div className="absolute bottom-0 left-0 w-20 h-20 sm:w-32 sm:h-32 lg:w-40 lg:h-40 bg-gradient-to-tr from-indigo-100/50 to-purple-100/50 rounded-full blur-2xl" />
+
+                <div className="relative z-10 p-6 sm:p-8 flex-grow flex flex-col">
+                  {/* Plan Title */}
+                  <motion.div
+                    className="text-center mb-6"
+                    whileHover={{ scale: 1.02 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-[#29224F] mb-2">
+                      {plan.title}
+                    </h2>
+                    {plan.price && (
+                      <motion.p 
+                        className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-[#29224F]"
+                        whileHover={{ scale: 1.05 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        {plan.price}
+                      </motion.p>
+                    )}
+                  </motion.div>
+
+                  {/* Features */}
+                  <motion.ul 
+                    className="space-y-3 sm:space-y-4 flex-grow mb-6 sm:mb-8"
+                    initial={{ opacity: 0 }}
+                    whileInView={{ opacity: 1 }}
+                    transition={{ duration: 0.6, delay: 0.4 + index * 0.2 }}
+                    viewport={{ once: true }}
+                  >
+                    {plan.features.map((feat, featIndex) => (
+                      <motion.li 
+                        key={feat} 
+                        className="flex items-start gap-3 text-sm sm:text-base text-[#29224F]/80"
+                        initial={{ x: -20, opacity: 0 }}
+                        whileInView={{ x: 0, opacity: 1 }}
+                        transition={{ duration: 0.4, delay: 0.6 + index * 0.2 + featIndex * 0.1 }}
+                        viewport={{ once: true }}
+                        whileHover={{ x: 5, color: "#29224F" }}
+                      >
+                        <div className="w-5 h-5 sm:w-6 sm:h-6 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-full text-xs sm:text-sm flex items-center justify-center flex-shrink-0 mt-0.5">
+                          ✓
+                        </div>
+                        <span>{feat}</span>
+                      </motion.li>
+                    ))}
+                  </motion.ul>
+
+                  {/* CTA Button */}
+                  <motion.div
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <Link
+                      href={plan.href}
+                      className={`block text-center py-3 sm:py-4 rounded-xl sm:rounded-2xl font-semibold text-sm sm:text-base transition-all duration-300 ${
+                        plan.featured
+                          ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white hover:from-purple-700 hover:to-indigo-700 shadow-lg hover:shadow-xl"
+                          : "border-2 border-purple-300 text-[#29224F] hover:bg-gradient-to-r hover:from-purple-600 hover:to-indigo-600 hover:text-white hover:border-transparent"
+                      }`}
+                    >
+                      {plan.btnText}
+                    </Link>
+                  </motion.div>
+                </div>
+
+                {/* Hover Effect Overlay */}
+                <motion.div
+                  className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-indigo-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl sm:rounded-3xl"
+                />
+              </motion.div>
+            ))}
+          </motion.div>
         </div>
-      </main>
+      </motion.main>
 
       {/* Footer */}
-      <FooterSection />
+      <motion.div
+        initial={{ y: 50, opacity: 0 }}
+        whileInView={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.8 }}
+        viewport={{ once: true }}
+      >
+        <FooterSection />
+      </motion.div>
     </div>
   );
 }
