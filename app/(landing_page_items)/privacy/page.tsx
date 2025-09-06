@@ -1,125 +1,119 @@
 "use client";
 
-import React, { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import React from "react";
+import { motion, useScroll, useTransform } from "framer-motion";
 import Link from "next/link";
 import FooterSection from "@/components/FooterSection";
 
 const MotionLink = motion(Link);
-const navLinks = [
-  { label: "Home", href: "/" },
-  { label: "Trial", href: "/#info" },
-  { label: "Shop", href: "/products" },
-  { label: "Contact", href: "/contact" }
-];
 
 export default function PrivacyPolicyPage() {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const navVariants = {
-    hidden: { opacity: 0, y: -10 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.5 } }
-  };
-  const mobileMenuVariants = {
-    hidden: { opacity: 0, height: 0 },
-    visible: { opacity: 1, height: "auto", transition: { duration: 0.3 } }
-  };
+  const { scrollYProgress } = useScroll();
+  const y = useTransform(scrollYProgress, [0, 1], [0, -50]);
+  const opacity = useTransform(scrollYProgress, [0, 0.5], [1, 0.8]);
 
   return (
-    <div className="flex flex-col min-h-screen bg-white text-[#29224F]">
-      {/* Navbar */}
-      <div className="bg-[#A9BAEF]">
-        <motion.nav
-          className="container mx-auto flex items-center justify-between py-4 px-4 md:px-0"
-          initial="hidden"
-          animate="visible"
-          variants={navVariants}
-        >
-          <MotionLink
-            href="/"
-            className="text-3xl font-bold"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            Dressify
-          </MotionLink>
-          <div className="hidden md:flex flex-1 justify-center space-x-6">
-            {navLinks.map(({ label, href }, idx) => (
-              <MotionLink
-                key={label}
-                href={href}
-                className="text-lg hover:underline"
-                whileHover={{ scale: 1.05 }}
-                transition={{ delay: idx * 0.05 }}
-              >
-                {label}
-              </MotionLink>
-            ))}
-          </div>
-          <div className="hidden md:flex items-center">
-            <MotionLink
-              href="/sign-in"
-              className="bg-[#29224F] text-white px-5 py-2 rounded-md hover:bg-[#8898CD] transition-colors"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              Login
-            </MotionLink>
-          </div>
-          <motion.button
-            className="md:hidden text-[#29224F]"
-            onClick={() => setIsMobileMenuOpen(o => !o)}
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-          </motion.button>
-        </motion.nav>
-        <AnimatePresence>
-          {isMobileMenuOpen && (
-            <motion.div
-              className="md:hidden bg-[#8898CD] container mx-auto px-4 overflow-hidden"
-              initial="hidden"
-              animate="visible"
-              exit="hidden"
-              variants={mobileMenuVariants}
-            >
-              {navLinks.map(({ label, href }, idx) => (
-                <MotionLink
-                  key={label}
-                  href={href}
-                  className="block py-2 text-lg hover:underline"
-                  whileHover={{ scale: 1.05 }}
-                  transition={{ delay: idx * 0.05 }}
-                >{label}</MotionLink>
-              ))}
-              <MotionLink
-                href="/sign-in"
-                className="block bg-[#29224F] text-white px-4 py-2 mt-2 rounded-md text-center hover:bg-[#8898CD]"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.9 }}
-              >
-                Login
-              </MotionLink>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-
+    <div className="flex flex-col min-h-screen bg-gradient-to-br from-[#F3E8FF] via-white to-[#F3E8FF] text-[#29224F]">
       {/* Hero Section */}
-      <section className="bg-[#FAFAFC] py-16 md:py-24">
-        <div className="container mx-auto text-center px-4 md:px-0">
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold mb-4">
-            Privacy Policy
-          </h1>
-          <p className="text-base md:text-lg text-gray-700 max-w-2xl mx-auto">
-            Last updated: May 1, 2025
-          </p>
+      <motion.section 
+        className="relative overflow-hidden py-12 sm:py-16 lg:py-20 xl:py-24"
+        style={{ y, opacity }}
+      >
+        {/* Animated Background Elements */}
+        <div className="absolute inset-0 overflow-hidden">
+          <motion.div
+            className="absolute top-20 left-10 w-32 h-32 bg-gradient-to-br from-purple-200/30 to-indigo-200/30 rounded-full blur-3xl"
+            animate={{
+              x: [0, 30, 0],
+              y: [0, -20, 0],
+              scale: [1, 1.1, 1],
+            }}
+            transition={{
+              duration: 8,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+          />
+          <motion.div
+            className="absolute top-40 right-20 w-40 h-40 bg-gradient-to-br from-indigo-200/30 to-purple-200/30 rounded-full blur-3xl"
+            animate={{
+              x: [0, -25, 0],
+              y: [0, 15, 0],
+              scale: [1, 0.9, 1],
+            }}
+            transition={{
+              duration: 10,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+          />
+          <motion.div
+            className="absolute bottom-20 left-1/3 w-24 h-24 bg-gradient-to-br from-purple-300/20 to-indigo-300/20 rounded-full blur-2xl"
+            animate={{
+              x: [0, 20, 0],
+              y: [0, -10, 0],
+              rotate: [0, 180, 360],
+            }}
+            transition={{
+              duration: 12,
+              repeat: Infinity,
+              ease: "linear",
+            }}
+          />
         </div>
-      </section>
 
-      <motion.main className="container mx-auto px-4 md:px-0 py-12 flex-1 space-y-16">
+        <div className="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div
+            className="text-center max-w-4xl mx-auto"
+            initial={{ y: 50, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+          >
+            {/* Privacy Badge */}
+            <motion.div
+              className="inline-flex items-center gap-2 sm:gap-3 bg-white/80 backdrop-blur-sm rounded-full px-4 sm:px-6 py-2 sm:py-3 mb-6 sm:mb-8 shadow-lg border border-purple-200/50"
+              whileHover={{ scale: 1.05 }}
+              transition={{ type: "spring", stiffness: 300 }}
+            >
+              <div className="w-2 h-2 sm:w-3 sm:h-3 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-full animate-pulse" />
+              <span className="text-[#29224F] font-semibold text-sm sm:text-base">Privacy Policy</span>
+            </motion.div>
+
+            {/* Main Title */}
+            <motion.h1
+              className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-extrabold mb-6 sm:mb-8 leading-tight"
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 0.8, delay: 0.4 }}
+            >
+              <span className="bg-gradient-to-r from-[#29224F] via-purple-700 to-indigo-700 bg-clip-text text-transparent">
+                Privacy
+              </span>
+              <br />
+              <span className="text-[#29224F]">Policy</span>
+            </motion.h1>
+
+            {/* Subtitle */}
+            <motion.p
+              className="text-base sm:text-lg md:text-xl lg:text-2xl text-[#29224F]/80 leading-relaxed max-w-3xl mx-auto mb-8 sm:mb-12 px-4"
+              initial={{ y: 30, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ duration: 0.8, delay: 0.6 }}
+            >
+              Last updated: 
+              <span className="font-semibold text-[#29224F]"> May 1, 2025</span>
+            </motion.p>
+          </motion.div>
+        </div>
+      </motion.section>
+
+      {/* Main Content */}
+      <motion.main 
+        className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20 flex-1 space-y-12 sm:space-y-16 lg:space-y-20"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 1.2 }}
+      >
         {/* Comprehensive Policy */}
         <section>
           <h2 className="text-3xl font-semibold mb-4">Introduction & Scope</h2>
@@ -263,20 +257,36 @@ export default function PrivacyPolicyPage() {
           </ul>
         </section>
 
-        <section className="mt-12 text-center">
+        <motion.section 
+          className="mt-12 text-center"
+          initial={{ y: 30, opacity: 0 }}
+          whileInView={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.6 }}
+          viewport={{ once: true }}
+        >
           <MotionLink
             href="/contact"
-            className="inline-block bg-[#29224F] text-white px-6 py-3 rounded-lg hover:bg-[#4B3F72] transition-colors"
-            whileHover={{ scale: 1.05 }}
+            className="inline-block bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-8 py-4 rounded-2xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
+            whileHover={{ 
+              scale: 1.05,
+              boxShadow: "0 20px 40px rgba(139, 92, 246, 0.3)"
+            }}
             whileTap={{ scale: 0.95 }}
           >
             Contact Us About Privacy
           </MotionLink>
-        </section>
+        </motion.section>
       </motion.main>
 
       {/* Footer */}
-      <FooterSection />
+      <motion.div
+        initial={{ y: 50, opacity: 0 }}
+        whileInView={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.8 }}
+        viewport={{ once: true }}
+      >
+        <FooterSection />
+      </motion.div>
     </div>
   );
 }

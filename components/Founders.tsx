@@ -49,7 +49,7 @@ export default function Founders() {
       </h2>
 
       <motion.div
-        className="container mx-auto flex flex-col md:flex-row md:space-x-6 space-y-6 md:space-y-0 px-4"
+        className="container mx-auto flex flex-col md:flex-row md:space-x-6 space-y-6 md:space-y-0 px-4 items-center md:items-stretch"
         variants={containerVariants}
         initial="hidden"
         animate="show"
@@ -58,7 +58,7 @@ export default function Founders() {
           <motion.div
             key={founder.title}
             variants={cardVariants}
-            className="w-full md:w-1/3"
+            className="w-full max-w-sm md:max-w-none md:w-1/3"
           >
             <DraggableCardContainer>
               <DraggableCardBody className="p-1 rounded-3xl bg-gradient-to-r from-[#4B3F72] via-[#6D5BAA] to-[#A59DE0] cursor-grab">

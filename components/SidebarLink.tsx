@@ -20,23 +20,28 @@ export default function SidebarLink({
   collapsed = false,
 }: SidebarLinkProps) {
   return (
-    <Link href={href}>
+    <Link href={href} className="w-full">
       <motion.div
         className={`
           flex items-center gap-3 py-3 px-4 rounded-xl transition-all duration-200
-          relative group border border-transparent
+          relative group border border-transparent w-full min-h-[44px]
           ${collapsed ? 'justify-center' : ''}
           ${active
             ? "bg-gradient-to-r from-purple-50 to-indigo-50 text-gray-900 shadow-sm border-gray-200"
             : "text-gray-700 hover:text-gray-900 hover:bg-gradient-to-r hover:from-purple-50 hover:to-indigo-50"
           } hover:-translate-y-0.5 hover:shadow-md
         `}
-        whileHover={{}}
-        whileTap={{}}
+        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.98 }}
       >
         {/* Active indicator stripe */}
         {active && (
-          <div className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-0.5 bg-indigo-600 rounded-full" />
+          <motion.div 
+            className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-1 bg-indigo-600 rounded-full"
+            initial={{ scaleY: 0 }}
+            animate={{ scaleY: 1 }}
+            transition={{ duration: 0.2 }}
+          />
         )}
 
         {/* Content */}

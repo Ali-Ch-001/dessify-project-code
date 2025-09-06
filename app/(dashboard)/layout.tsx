@@ -4,6 +4,7 @@
 import { ReactNode, useState, useEffect, useMemo } from 'react';
 import { usePathname } from 'next/navigation';
 import { useRequireAuth } from '@/lib/useRequireAuth';
+import Image from 'next/image';
 import {
   Upload,
   Pencil,
@@ -13,7 +14,6 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
-  Sparkles,
   Image as ImageIconLucide,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -108,27 +108,46 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.2 }}
         >
-          <div className="relative">
-            <motion.div
-              className="absolute inset-0 bg-gradient-to-r from-purple-500 to-indigo-600 rounded-xl opacity-15"
-            />
-            <div className="relative bg-gradient-to-r from-purple-600 to-indigo-600 p-3 rounded-xl shadow-lg">
-              {effectiveCollapsed ? (
-                <Shirt size={24} className="text-white" />
-              ) : (
-                <Shirt size={40} className="text-white" />
-              )}
-            </div>
-            {!effectiveCollapsed && (
-              <div className="absolute -top-1 -right-1">
-                <Sparkles size={16} className="text-yellow-400" />
-              </div>
+          <motion.div
+            className="relative"
+            whileHover={{ scale: 1.1, rotate: 5 }}
+            whileTap={{ scale: 0.95 }}
+            transition={{ duration: 0.2 }}
+          >
+            {effectiveCollapsed ? (
+              <motion.div
+                initial={{ scale: 0.8 }}
+                animate={{ scale: 1 }}
+                transition={{ duration: 0.3, type: "spring", stiffness: 200 }}
+              >
+                <Image
+                  src="/landing_img/Logo_Initial.png"
+                  alt="Logo D"
+                  width={32}
+                  height={32}
+                  className="object-contain drop-shadow-lg"
+                />
+              </motion.div>
+            ) : (
+              <motion.div
+                initial={{ scale: 0.8 }}
+                animate={{ scale: 1 }}
+                transition={{ duration: 0.3, type: "spring", stiffness: 200 }}
+              >
+                <Image
+                  src="/landing_img/Logo_Initial.png"
+                  alt="Logo D"
+                  width={56}
+                  height={56}
+                  className="object-contain drop-shadow-lg"
+                />
+              </motion.div>
             )}
-          </div>
+          </motion.div>
         </motion.div>
 
         {/* Nav links */}
-        <nav className="flex flex-col gap-2 flex-1">
+        <nav className="flex flex-col gap-2 flex-1 w-full">
           <AnimatePresence>
             {navItems.map((item, i) => (
               <motion.div
@@ -136,9 +155,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.16, delay: 0.04 + i * 0.02 }}
-                className={`flex items-center w-full ${
-                  effectiveCollapsed ? 'justify-center' : 'justify-start'
-                }`}
+                className="w-full"
               >
                 <SidebarLink
                   href={item.href}

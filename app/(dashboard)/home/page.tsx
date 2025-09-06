@@ -1,15 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 
 import TopPicksCard from "@/components/TopPicksCard";
 import Image from "next/image";
 import { supabase } from "@/lib/supabaseClient";
-import { Sparkles, TrendingUp, Calendar, Zap } from "lucide-react";
+import { Sparkles, TrendingUp, Calendar, Upload } from "lucide-react";
 
 export default function HomePage() {
   const [displayName, setDisplayName] = useState<string>("User");
+  const [uploadedItemsCount, setUploadedItemsCount] = useState<number>(0);
+  const [isCompact, setIsCompact] = useState<boolean>(false);
   const today = new Date().toLocaleDateString("en-US", {
     year: "numeric",
     month: "long",
@@ -27,6 +29,7 @@ export default function HomePage() {
         return;
       }
 
+      // Fetch user profile
       const { data: profile, error: profileErr } = await supabase
         .from("profiles")
         .select("display_name")
@@ -39,7 +42,28 @@ export default function HomePage() {
       } else {
         setDisplayName(profile.display_name ?? user.email ?? "User");
       }
+
+      // Fetch uploaded items count
+      const { count, error: countErr } = await supabase
+        .from("userwardrobe")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user.id);
+
+      if (countErr) {
+        console.error("Error fetching items count:", countErr);
+      } else {
+        setUploadedItemsCount(count || 0);
+      }
     })();
+  }, []);
+
+  // Trigger compact mode after 10 seconds
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsCompact(true);
+    }, 10000); // 10 seconds
+
+    return () => clearTimeout(timer);
   }, []);
 
   const containerVariants = {
@@ -74,11 +98,23 @@ export default function HomePage() {
     >
       {/* Welcome Section */}
       <motion.div
-        className="relative overflow-hidden bg-gradient-to-br from-purple-50 via-indigo-50 to-purple-100 
-                   rounded-2xl p-6 sm:p-8 border border-white/50 shadow-xl shadow-black/5"
+        className={`relative overflow-hidden bg-gradient-to-br from-purple-50 via-indigo-50 to-purple-100 
+                   rounded-2xl border border-white/50 shadow-xl shadow-black/5
+                   ${isCompact ? 'p-4 sm:p-6' : 'p-6 sm:p-8'}`}
         variants={itemVariants}
         whileHover={{ scale: 1.01 }}
-        transition={{ type: "spring", stiffness: 300 }}
+        layout
+        animate={{
+          height: isCompact ? "auto" : "auto",
+          scale: isCompact ? 0.95 : 1,
+        }}
+        transition={{
+          type: "spring",
+          stiffness: 300,
+          duration: 0.8,
+          ease: [0.4, 0, 0.2, 1],
+          layout: { duration: 0.8, ease: [0.4, 0, 0.2, 1] }
+        }}
       >
         {/* Background decoration */}
         <motion.div
@@ -94,84 +130,183 @@ export default function HomePage() {
           }}
         />
         
-        <div className="relative z-10 flex flex-col lg:flex-row justify-between items-center gap-6 sm:gap-8">
-          <div className="space-y-3 sm:space-y-4 flex-1">
-            <motion.div
-              className="flex items-center gap-2 text-xs sm:text-sm text-purple-600 font-medium"
+        <AnimatePresence mode="wait">
+          {!isCompact ? (
+            // Full layout
+            <motion.div 
+              key="full-layout"
+              className="relative z-10 flex flex-col lg:flex-row justify-between items-center gap-6 sm:gap-8"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ 
+                opacity: 0, 
+                scale: 0.95,
+                y: -20,
+                transition: { duration: 0.5, ease: "easeIn" }
+              }}
+            >
+            <div className="space-y-3 sm:space-y-4 flex-1">
+              <motion.div
+                className="flex items-center gap-2 text-xs sm:text-sm text-purple-600 font-medium"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.3 }}
+              >
+                <Calendar size={14} className="sm:w-4 sm:h-4" />
+                {today}
+              </motion.div>
+              
+              <motion.h1 
+                className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 bg-clip-text text-transparent flex items-center gap-2"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+              >
+                Welcome Back, {displayName}!
+                <motion.div
+                  animate={{ 
+                    scale: [1, 1.2, 1],
+                    rotate: [0, 180, 360]
+                  }}
+                  transition={{ 
+                    duration: 3, 
+                    repeat: Infinity, 
+                    ease: "easeInOut" 
+                  }}
+                >
+                  <Sparkles size={24} className="text-yellow-500" />
+                </motion.div>
+              </motion.h1>
+              
+              <motion.p 
+                className="text-sm sm:text-lg text-gray-600 leading-relaxed"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 }}
+              >
+                Ready to dazzle? Tell me what&apos;s your mood today and let&apos;s find your perfect outfit!
+              </motion.p>
+
+              {/* Quick Stats */}
+              <motion.div
+                className="flex flex-wrap gap-3 sm:gap-4 pt-3 sm:pt-4"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.6 }}
+              >
+                <div className="flex items-center gap-2 bg-white/60 backdrop-blur-sm rounded-lg px-3 py-1.5 sm:px-4 sm:py-2">
+                  <TrendingUp size={14} className="text-green-600 sm:w-4 sm:h-4" />
+                  <span className="text-xs sm:text-sm font-medium text-gray-700">12 Looks Created</span>
+                </div>
+                <div className="flex items-center gap-2 bg-white/60 backdrop-blur-sm rounded-lg px-3 py-1.5 sm:px-4 sm:py-2">
+                  <Upload size={14} className="text-blue-600 sm:w-4 sm:h-4" />
+                  <span className="text-xs sm:text-sm font-medium text-gray-700">{uploadedItemsCount} Items Uploaded</span>
+                </div>
+              </motion.div>
+            </div>
+
+            <motion.div 
+              className="relative w-full lg:w-80 h-48 sm:h-64 lg:h-48"
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.7, duration: 0.5 }}
+            >
+              <Image
+                src="/dashboard_img/homepage.png"
+                alt="Welcome"
+                fill
+                className="object-contain rounded-xl"
+                priority
+              />
+              {/* Floating sparkles */}
+              <motion.div
+                className="absolute -top-2 -right-2"
+                animate={{ 
+                  scale: [1, 1.2, 1],
+                  rotate: [0, 180, 360]
+                }}
+                transition={{ 
+                  duration: 3, 
+                  repeat: Infinity, 
+                  ease: "easeInOut" 
+                }}
+              >
+                <Sparkles size={16} className="text-yellow-400 sm:w-5 sm:h-5" />
+              </motion.div>
+            </motion.div>
+          </motion.div>
+          ) : (
+            // Compact layout
+            <motion.div 
+              key="compact-layout"
+              className="relative z-10 flex flex-col sm:flex-row justify-center sm:justify-between items-center gap-4"
+              initial={{ opacity: 0, y: 20, scale: 0.9 }}
+              animate={{ 
+                opacity: 1, 
+                y: 0, 
+                scale: 1,
+                transition: {
+                  duration: 0.6,
+                  ease: [0.4, 0, 0.2, 1],
+                  delay: 0.2
+                }
+              }}
+            >
+            <motion.div 
+              className="flex items-center justify-center sm:justify-start gap-2 text-sm sm:text-base text-purple-600 font-medium"
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.3 }}
+              transition={{ delay: 0.3, duration: 0.5 }}
             >
-              <Calendar size={14} className="sm:w-4 sm:h-4" />
+              <motion.div
+                animate={{ rotate: [0, 360] }}
+                transition={{ duration: 0.8, delay: 0.4 }}
+              >
+                <Calendar size={16} className="sm:w-5 sm:h-5" />
+              </motion.div>
               {today}
             </motion.div>
             
-            <motion.h1 
-              className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 bg-clip-text text-transparent"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
+            <motion.div 
+              className="flex flex-wrap justify-center sm:justify-start gap-3 sm:gap-4"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.4, duration: 0.5 }}
             >
-              Welcome Back, {displayName}! ✨
-            </motion.h1>
-            
-            <motion.p 
-              className="text-sm sm:text-lg text-gray-600 leading-relaxed"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5 }}
-            >
-              Ready to dazzle? Tell me what&apos;s your mood today and let&apos;s find your perfect outfit!
-            </motion.p>
-
-            {/* Quick Stats */}
-            <motion.div
-              className="flex flex-wrap gap-3 sm:gap-4 pt-3 sm:pt-4"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.6 }}
-            >
-              <div className="flex items-center gap-2 bg-white/60 backdrop-blur-sm rounded-lg px-3 py-1.5 sm:px-4 sm:py-2">
-                <TrendingUp size={14} className="text-green-600 sm:w-4 sm:h-4" />
-                <span className="text-xs sm:text-sm font-medium text-gray-700">12 Looks Created</span>
-              </div>
-              <div className="flex items-center gap-2 bg-white/60 backdrop-blur-sm rounded-lg px-3 py-1.5 sm:px-4 sm:py-2">
-                <Zap size={14} className="text-yellow-600 sm:w-4 sm:h-4" />
-                <span className="text-xs sm:text-sm font-medium text-gray-700">5 Items Uploaded</span>
-              </div>
-            </motion.div>
-          </div>
-
-          <motion.div 
-            className="relative w-full lg:w-80 h-48 sm:h-64 lg:h-48"
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.7, duration: 0.5 }}
-          >
-            <Image
-              src="/dashboard_img/homepage.png"
-              alt="Welcome"
-              fill
-              className="object-contain rounded-xl"
-              priority
-            />
-            {/* Floating sparkles */}
-            <motion.div
-              className="absolute -top-2 -right-2"
-              animate={{ 
-                scale: [1, 1.2, 1],
-                rotate: [0, 180, 360]
-              }}
-              transition={{ 
-                duration: 3, 
-                repeat: Infinity, 
-                ease: "easeInOut" 
-              }}
-            >
-              <Sparkles size={16} className="text-yellow-400 sm:w-5 sm:h-5" />
+              <motion.div 
+                className="flex items-center gap-2 bg-white/60 backdrop-blur-sm rounded-lg px-3 py-1.5 sm:px-4 sm:py-2"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.5, duration: 0.4 }}
+                whileHover={{ scale: 1.05 }}
+              >
+                <motion.div
+                  animate={{ rotate: [0, 15, -15, 0] }}
+                  transition={{ duration: 1, delay: 0.6 }}
+                >
+                  <TrendingUp size={16} className="text-green-600 sm:w-4 sm:h-4" />
+                </motion.div>
+                <span className="text-sm font-medium text-gray-700">12 Looks Created</span>
+              </motion.div>
+              <motion.div 
+                className="flex items-center gap-2 bg-white/60 backdrop-blur-sm rounded-lg px-3 py-1.5 sm:px-4 sm:py-2"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.6, duration: 0.4 }}
+                whileHover={{ scale: 1.05 }}
+              >
+                <motion.div
+                  animate={{ y: [0, -2, 0] }}
+                  transition={{ duration: 1.5, delay: 0.7, repeat: Infinity }}
+                >
+                  <Upload size={16} className="text-blue-600 sm:w-4 sm:h-4" />
+                </motion.div>
+                <span className="text-sm font-medium text-gray-700">{uploadedItemsCount} Items Uploaded</span>
+              </motion.div>
             </motion.div>
           </motion.div>
-        </div>
+          )}
+        </AnimatePresence>
       </motion.div>
 
       {/* AI Features Card */}
