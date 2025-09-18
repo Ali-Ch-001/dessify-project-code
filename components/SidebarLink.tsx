@@ -46,9 +46,9 @@ export default function SidebarLink({
 
         {/* Content */}
         <motion.div
-          className="relative z-10 flex items-center gap-3 w-full"
+          className={`relative z-10 flex items-center gap-3 ${collapsed ? 'justify-center w-full' : 'w-full'}`}
         >
-          <div className="flex-shrink-0">
+          <div className={`flex-shrink-0 ${collapsed ? 'flex justify-center items-center' : ''}`}>
             {icon}
           </div>
           {label && !collapsed && (
