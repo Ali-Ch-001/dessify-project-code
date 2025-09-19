@@ -103,7 +103,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       >
         {/* Logo */}
         <motion.div 
-          className="flex justify-center mb-4"
+          className="flex justify-center items-center mb-4 w-full"
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.2 }}
@@ -172,7 +172,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         {/* Collapse/expand toggle (only on desktop) */}
         {!isMobile && (
           <motion.div 
-            className="mt-auto flex justify-center"
+            className="mt-auto flex justify-center items-center w-full"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.18 }}
