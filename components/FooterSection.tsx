@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { FiFacebook, FiTwitter, FiInstagram, FiMail, FiHeart, FiArrowRight } from "react-icons/fi";
-import { FaGem, FaRocket, FaStar } from "react-icons/fa";
+import { FaGem, FaRocket, FaStar, FaUserCog } from "react-icons/fa";
 
 const socialLinks = [
   { href: "https://facebook.com/Dressify", icon: <FiFacebook size={24} />, label: "Facebook", color: "group-hover:text-blue-600" },
@@ -18,6 +18,7 @@ const footerNav = [
     links: [
       { label: "Products", href: "/products", icon: <FaGem size={16} /> },
       { label: "Pricing", href: "/pricing", icon: <FaStar size={16} /> },
+      { label: "Admin Panel", href: "/admin", icon: <FaUserCog size={16} /> },
     ],
   },
   {

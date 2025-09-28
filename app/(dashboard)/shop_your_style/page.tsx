@@ -72,7 +72,7 @@ const ShopYourStyle = () => {
     total_amount: number;
     status: string;
     created_at: string;
-    order_items?: Array<{
+    items?: Array<{
       product_name: string;
       quantity: number;
       price: number;
@@ -921,7 +921,7 @@ const PreviousOrdersModal = ({ orders, onClose }: {
     total_amount: number;
     status: string;
     created_at: string;
-    order_items?: Array<{
+    items?: Array<{
       product_name: string;
       quantity: number;
       price: number;
@@ -929,6 +929,65 @@ const PreviousOrdersModal = ({ orders, onClose }: {
   }>;
   onClose: () => void;
 }) => {
+  const getStatusColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'processing':
+        return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'shipped':
+        return 'bg-purple-100 text-purple-800 border-purple-200';
+      case 'delivered':
+        return 'bg-green-100 text-green-800 border-green-200';
+      case 'cancelled':
+        return 'bg-red-100 text-red-800 border-red-200';
+      default:
+        return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'pending':
+        return (
+          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+          </svg>
+        );
+      case 'processing':
+        return (
+          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clipRule="evenodd" />
+          </svg>
+        );
+      case 'shipped':
+        return (
+          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+            <path d="M8 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM15 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" />
+            <path d="M3 4a1 1 0 00-1 1v10a1 1 0 001 1h1.05a2.5 2.5 0 014.9 0H10a1 1 0 001-1V5a1 1 0 00-1-1H3zM14 7a1 1 0 00-1 1v6.05A2.5 2.5 0 0115.95 16H17a1 1 0 001-1V8a1 1 0 00-1-1h-3z" />
+          </svg>
+        );
+      case 'delivered':
+        return (
+          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+          </svg>
+        );
+      case 'cancelled':
+        return (
+          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+          </svg>
+        );
+      default:
+        return (
+          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+          </svg>
+        );
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -938,15 +997,15 @@ const PreviousOrdersModal = ({ orders, onClose }: {
       <motion.div
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto"
+        className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-y-auto"
       >
         <div className="p-6 md:p-8">
           <div className="flex items-center justify-between mb-8">
             <div>
               <h2 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                Previous Orders
+                Order History
               </h2>
-              <p className="text-gray-600 mt-1">Your order history</p>
+              <p className="text-gray-600 mt-1">Track your orders and their current status</p>
             </div>
             <motion.button
               whileHover={{ scale: 1.1 }}
@@ -969,20 +1028,27 @@ const PreviousOrdersModal = ({ orders, onClose }: {
               <p className="text-gray-600">You haven&apos;t placed any orders yet. Start shopping to see your orders here!</p>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-6">
               {orders.map((order, index) => (
                 <motion.div
                   key={order.id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.1 }}
-                  className="bg-gray-50 rounded-xl p-4 md:p-6 border border-gray-200"
+                  className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-300"
                 >
-                  <div className="flex items-center justify-between mb-4">
-                    <div>
-                      <h3 className="font-semibold text-lg text-gray-800">Order #{order.order_number}</h3>
+                  {/* Order Header */}
+                  <div className="flex flex-col lg:flex-row lg:items-center justify-between mb-6">
+                    <div className="mb-4 lg:mb-0">
+                      <div className="flex items-center gap-3 mb-2">
+                        <h3 className="font-bold text-xl text-gray-800">Order #{order.order_number}</h3>
+                        <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(order.status)}`}>
+                          {getStatusIcon(order.status)}
+                          {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                        </span>
+                      </div>
                       <p className="text-sm text-gray-600">
-                        {new Date(order.created_at).toLocaleDateString('en-US', {
+                        Placed on {new Date(order.created_at).toLocaleDateString('en-US', {
                           year: 'numeric',
                           month: 'long',
                           day: 'numeric',
@@ -992,34 +1058,111 @@ const PreviousOrdersModal = ({ orders, onClose }: {
                       </p>
                     </div>
                     <div className="text-right">
-                      <div className="text-lg font-bold text-green-600">Rs {order.total_amount.toFixed(2)}</div>
+                      <div className="text-2xl font-bold text-green-600 mb-1">Rs {order.total_amount.toFixed(2)}</div>
                       <div className="text-sm text-gray-600 capitalize">{order.payment_method.replace('_', ' ')}</div>
                     </div>
                   </div>
 
-                  <div className="space-y-2 mb-4">
-                    {order.order_items?.map((item: { product_name: string; quantity: number; price: number }, itemIndex: number) => (
-                      <div key={itemIndex} className="flex items-center justify-between text-sm">
-                        <span className="text-gray-600">{item.product_name} x{item.quantity}</span>
-                        <span className="font-medium">Rs {(item.price * item.quantity).toFixed(2)}</span>
+                  {/* Order Items */}
+                  <div className="mb-6">
+                    <h4 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
+                      </svg>
+                      Order Items
+                    </h4>
+                    <div className="bg-gray-50 rounded-lg p-4">
+                      <div className="space-y-3">
+                        {order.items?.map((item: { product_name: string; quantity: number; price: number }, itemIndex: number) => (
+                          <div key={itemIndex} className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                              <span className="text-gray-700 font-medium">{item.product_name}</span>
+                              <span className="text-gray-500 text-sm">x{item.quantity}</span>
+                            </div>
+                            <span className="font-semibold text-gray-800">Rs {(item.price * item.quantity).toFixed(2)}</span>
+                          </div>
+                        )) || <p className="text-gray-500 text-sm">No items found</p>}
                       </div>
-                    )) || <p className="text-gray-500 text-sm">No items found</p>}
+                    </div>
                   </div>
 
-                  <div className="border-t pt-3">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <span className="font-medium text-gray-700">Customer:</span>
-                        <p className="text-gray-600">{order.customer_name}</p>
+                  {/* Customer & Shipping Info */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <h4 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                        </svg>
+                        Customer Information
+                      </h4>
+                      <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+                        <div>
+                          <span className="text-sm font-medium text-gray-600">Name:</span>
+                          <p className="text-gray-800">{order.customer_name}</p>
+                        </div>
+                        <div>
+                          <span className="text-sm font-medium text-gray-600">Email:</span>
+                          <p className="text-gray-800">{order.customer_email}</p>
+                        </div>
+                        <div>
+                          <span className="text-sm font-medium text-gray-600">Phone:</span>
+                          <p className="text-gray-800">{order.customer_phone}</p>
+                        </div>
                       </div>
-                      <div>
-                        <span className="font-medium text-gray-700">Phone:</span>
-                        <p className="text-gray-600">{order.customer_phone}</p>
+                    </div>
+
+                    <div>
+                      <h4 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+                        </svg>
+                        Shipping Address
+                      </h4>
+                      <div className="bg-gray-50 rounded-lg p-4">
+                        <p className="text-gray-800">{order.shipping_address}</p>
+                        <p className="text-gray-800">{order.city}, {order.postal_code}</p>
                       </div>
-                      <div className="md:col-span-2">
-                        <span className="font-medium text-gray-700">Address:</span>
-                        <p className="text-gray-600">{order.shipping_address}, {order.city} {order.postal_code}</p>
-                      </div>
+                    </div>
+                  </div>
+
+                  {/* Status Progress Bar */}
+                  <div className="mt-6 pt-6 border-t border-gray-200">
+                    <h4 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      </svg>
+                      Order Progress
+                    </h4>
+                    <div className="flex items-center justify-between">
+                      {['pending', 'processing', 'shipped', 'delivered'].map((status, statusIndex) => {
+                        const isActive = ['pending', 'processing', 'shipped', 'delivered'].indexOf(order.status.toLowerCase()) >= statusIndex;
+                        const isCurrent = order.status.toLowerCase() === status;
+                        return (
+                          <div key={status} className="flex flex-col items-center">
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                              isActive 
+                                ? isCurrent 
+                                  ? 'bg-purple-500 text-white' 
+                                  : 'bg-green-500 text-white'
+                                : 'bg-gray-200 text-gray-500'
+                            }`}>
+                              {isActive ? (
+                                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                </svg>
+                              ) : (
+                                statusIndex + 1
+                              )}
+                            </div>
+                            <span className={`text-xs mt-2 font-medium ${
+                              isActive ? 'text-gray-800' : 'text-gray-500'
+                            }`}>
+                              {status.charAt(0).toUpperCase() + status.slice(1)}
+                            </span>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 </motion.div>

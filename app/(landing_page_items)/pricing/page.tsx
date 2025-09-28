@@ -58,7 +58,7 @@ export default function PricingPage() {
     <div className="flex flex-col min-h-screen bg-gradient-to-br from-[#F3E8FF] via-white to-[#F3E8FF] text-[#29224F]">
       {/* Hero Section */}
       <motion.section 
-        className="relative overflow-hidden py-12 sm:py-16 lg:py-20 xl:py-24"
+        className="relative overflow-hidden py-8 sm:py-12 lg:py-16"
         style={{ y, opacity }}
       >
         {/* Animated Background Elements */}
@@ -137,7 +137,7 @@ export default function PricingPage() {
 
             {/* Subtitle */}
             <motion.p
-              className="text-base sm:text-lg md:text-xl lg:text-2xl text-[#29224F]/80 leading-relaxed max-w-3xl mx-auto mb-8 sm:mb-12 px-4"
+              className="text-base sm:text-lg md:text-xl lg:text-2xl text-[#29224F]/80 leading-relaxed max-w-3xl mx-auto mb-2 sm:mb-4 px-4"
               initial={{ y: 30, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ duration: 0.8, delay: 0.6 }}
@@ -151,14 +151,14 @@ export default function PricingPage() {
 
       {/* Pricing Cards */}
       <motion.main 
-        className="flex-grow py-12 sm:py-16 lg:py-20"
+        className="flex-grow py-2 sm:py-4 lg:py-6"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 1.2 }}
+        transition={{ duration: 0.6, delay: 0.8 }}
       >
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div 
-            className="grid gap-6 sm:gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
+            className="grid gap-4 sm:gap-6 lg:gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
             initial={{ y: 50, opacity: 0 }}
             whileInView={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.8 }}
@@ -174,26 +174,33 @@ export default function PricingPage() {
                 }`}
                 initial={{ y: 50, opacity: 0, scale: 0.9 }}
                 whileInView={{ y: 0, opacity: 1, scale: 1 }}
-                transition={{ duration: 0.6, delay: index * 0.2 }}
+                transition={{ 
+                  duration: 0.8, 
+                  delay: index * 0.15,
+                  type: "spring",
+                  stiffness: 100,
+                  damping: 15
+                }}
                 viewport={{ once: true }}
                 whileHover={{ 
-                  y: -8,
+                  y: -12,
+                  scale: 1.02,
                   boxShadow: plan.featured 
-                    ? "0 25px 50px rgba(139, 92, 246, 0.25)"
-                    : "0 25px 50px rgba(139, 92, 246, 0.15)"
+                    ? "0 30px 60px rgba(139, 92, 246, 0.3)"
+                    : "0 20px 40px rgba(139, 92, 246, 0.2)"
                 }}
               >
                 {/* Featured Badge */}
                 {plan.featured && (
                   <motion.div
-                    className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10"
+                    className="absolute top-4 left-4 z-20"
                     initial={{ scale: 0, rotate: -180 }}
                     whileInView={{ scale: 1, rotate: 0 }}
                     transition={{ duration: 0.6, delay: 0.3 + index * 0.2 }}
                     viewport={{ once: true }}
                   >
-                    <div className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-4 py-1 rounded-full text-sm font-semibold shadow-lg">
-                      Most Popular
+                    <div className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-3 py-1 rounded-lg text-xs font-bold shadow-lg border-2 border-white">
+                      ⭐ MOST POPULAR
                     </div>
                   </motion.div>
                 )}
@@ -202,21 +209,30 @@ export default function PricingPage() {
                 <div className="absolute top-0 right-0 w-16 h-16 sm:w-24 sm:h-24 lg:w-32 lg:h-32 bg-gradient-to-br from-purple-100/50 to-indigo-100/50 rounded-full blur-2xl" />
                 <div className="absolute bottom-0 left-0 w-20 h-20 sm:w-32 sm:h-32 lg:w-40 lg:h-40 bg-gradient-to-tr from-indigo-100/50 to-purple-100/50 rounded-full blur-2xl" />
 
-                <div className="relative z-10 p-6 sm:p-8 flex-grow flex flex-col">
+                <div className="relative z-10 p-4 sm:p-6 lg:p-8 flex-grow flex flex-col">
                   {/* Plan Title */}
                   <motion.div
-                    className="text-center mb-6"
+                    className="text-center mb-4 sm:mb-6"
                     whileHover={{ scale: 1.02 }}
-                    transition={{ duration: 0.3 }}
+                    transition={{ duration: 0.3, type: "spring", stiffness: 300 }}
                   >
-                    <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-[#29224F] mb-2">
+                    <motion.h2 
+                      className="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-[#29224F] mb-2"
+                      initial={{ opacity: 0, y: 20 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.6, delay: 0.2 + index * 0.1 }}
+                      viewport={{ once: true }}
+                    >
                       {plan.title}
-                    </h2>
+                    </motion.h2>
                     {plan.price && (
                       <motion.p 
-                        className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-[#29224F]"
+                        className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-extrabold text-[#29224F]"
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        whileInView={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.6, delay: 0.3 + index * 0.1 }}
+                        viewport={{ once: true }}
                         whileHover={{ scale: 1.05 }}
-                        transition={{ duration: 0.3 }}
                       >
                         {plan.price}
                       </motion.p>
@@ -225,10 +241,10 @@ export default function PricingPage() {
 
                   {/* Features */}
                   <motion.ul 
-                    className="space-y-3 sm:space-y-4 flex-grow mb-6 sm:mb-8"
+                    className="space-y-2 sm:space-y-3 lg:space-y-4 flex-grow mb-4 sm:mb-6 lg:mb-8"
                     initial={{ opacity: 0 }}
                     whileInView={{ opacity: 1 }}
-                    transition={{ duration: 0.6, delay: 0.4 + index * 0.2 }}
+                    transition={{ duration: 0.6, delay: 0.4 + index * 0.1 }}
                     viewport={{ once: true }}
                   >
                     {plan.features.map((feat, featIndex) => (
@@ -237,13 +253,33 @@ export default function PricingPage() {
                         className="flex items-start gap-3 text-sm sm:text-base text-[#29224F]/80"
                         initial={{ x: -20, opacity: 0 }}
                         whileInView={{ x: 0, opacity: 1 }}
-                        transition={{ duration: 0.4, delay: 0.6 + index * 0.2 + featIndex * 0.1 }}
+                        transition={{ 
+                          duration: 0.5, 
+                          delay: 0.5 + index * 0.1 + featIndex * 0.05,
+                          type: "spring",
+                          stiffness: 200
+                        }}
                         viewport={{ once: true }}
-                        whileHover={{ x: 5, color: "#29224F" }}
+                        whileHover={{ 
+                          x: 5, 
+                          color: "#29224F",
+                          transition: { duration: 0.2 }
+                        }}
                       >
-                        <div className="w-5 h-5 sm:w-6 sm:h-6 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-full text-xs sm:text-sm flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <motion.div 
+                          className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-full text-xs sm:text-sm flex items-center justify-center flex-shrink-0 mt-0.5"
+                          initial={{ scale: 0, rotate: -180 }}
+                          whileInView={{ scale: 1, rotate: 0 }}
+                          transition={{ 
+                            duration: 0.4, 
+                            delay: 0.6 + index * 0.1 + featIndex * 0.05,
+                            type: "spring",
+                            stiffness: 300
+                          }}
+                          viewport={{ once: true }}
+                        >
                           ✓
-                        </div>
+                        </motion.div>
                         <span>{feat}</span>
                       </motion.li>
                     ))}
@@ -251,12 +287,16 @@ export default function PricingPage() {
 
                   {/* CTA Button */}
                   <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: 0.7 + index * 0.1 }}
+                    viewport={{ once: true }}
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                   >
                     <Link
                       href={plan.href}
-                      className={`block text-center py-3 sm:py-4 rounded-xl sm:rounded-2xl font-semibold text-sm sm:text-base transition-all duration-300 ${
+                      className={`block text-center py-2.5 sm:py-3 lg:py-4 rounded-xl sm:rounded-2xl font-semibold text-xs sm:text-sm lg:text-base transition-all duration-300 ${
                         plan.featured
                           ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white hover:from-purple-700 hover:to-indigo-700 shadow-lg hover:shadow-xl"
                           : "border-2 border-purple-300 text-[#29224F] hover:bg-gradient-to-r hover:from-purple-600 hover:to-indigo-600 hover:text-white hover:border-transparent"
