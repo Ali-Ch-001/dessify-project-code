@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import Image from "next/image";
+import Link from "next/link";
 import { AiOutlineRobot } from "react-icons/ai";
 import { FiSettings, FiChevronLeft, FiChevronRight, FiUpload } from "react-icons/fi";
 import { FaShoppingBag, FaMagic } from "react-icons/fa";
@@ -437,18 +438,20 @@ const InfoSection: React.FC = () => {
                     />
                     
                     {/* Enhanced call-to-action */}
-                    <motion.div 
-                      className="text-sm text-purple-600 font-medium flex items-center justify-center gap-1"
-                      whileHover={{ scale: 1.05 }}
-                    >
-                      <span>Explore Collection</span>
-                      <motion.span
-                        animate={{ x: [0, 3, 0] }}
-                        transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+                    <Link href="/products">
+                      <motion.div 
+                        className="text-sm text-purple-600 font-medium flex items-center justify-center gap-1 cursor-pointer"
+                        whileHover={{ scale: 1.05 }}
                       >
-                        →
-                      </motion.span>
-                    </motion.div>
+                        <span>Explore Collection</span>
+                        <motion.span
+                          animate={{ x: [0, 3, 0] }}
+                          transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+                        >
+                          →
+                        </motion.span>
+                      </motion.div>
+                    </Link>
                     
                     {/* Decorative elements */}
                     <motion.div
@@ -582,18 +585,20 @@ const InfoSection: React.FC = () => {
                   />
                   
                   {/* Enhanced call-to-action */}
-                  <motion.p 
-                    className="text-sm text-purple-600 font-medium flex items-center gap-1 group-hover:gap-2 transition-all duration-300"
-                    whileHover={{ x: 5 }}
-                  >
-                    <span>Explore Collection</span>
-                    <motion.span
-                      animate={{ x: [0, 3, 0] }}
-                      transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+                  <Link href="/products">
+                    <motion.p 
+                      className="text-sm text-purple-600 font-medium flex items-center gap-1 group-hover:gap-2 transition-all duration-300 cursor-pointer"
+                      whileHover={{ x: 5 }}
                     >
-                      →
-                    </motion.span>
-                  </motion.p>
+                      <span>Explore Collection</span>
+                      <motion.span
+                        animate={{ x: [0, 3, 0] }}
+                        transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+                      >
+                        →
+                      </motion.span>
+                    </motion.p>
+                  </Link>
                 </div>
               </div>
             </motion.div>

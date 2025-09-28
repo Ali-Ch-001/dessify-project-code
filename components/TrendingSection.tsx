@@ -2,7 +2,8 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
-import { FiChevronLeft, FiChevronRight, FiHeart, FiShoppingCart, FiEye } from "react-icons/fi";
+import { useRouter } from "next/navigation";
+import { FiChevronLeft, FiChevronRight, FiShoppingCart, FiEye } from "react-icons/fi";
 import { FaStar } from "react-icons/fa";
 
 // Product type
@@ -17,46 +18,46 @@ interface Product {
 // Categories and respective products
 const productMap: Record<string, Product[]> = {
   HOT: [
-    { id: 1, title: "Spread Collar Shirt", price: "$48.99", rating: 5.0, imgSrc: "/landing_img/shirt1.png" },
-    { id: 2, title: "White Solid Formal Shirt", price: "$39.00", rating: 4.9, imgSrc: "/landing_img/shirt2.png" },
-    { id: 3, title: "Shine On Me Blouse", price: "$34.50", rating: 4.8, imgSrc: "/landing_img/shirt3.png" },
-    { id: 4, title: "Gray Solid Padded Jacket", price: "$52.00", rating: 4.7, imgSrc: "/landing_img/shirt4.png" },
-    { id: 5, title: "Printed Loose T-shirt", price: "$39.99", rating: 5.0, imgSrc: "/landing_img/shirt5.png" },
-    { id: 6, title: "Summer Wind Crop Shirt", price: "$29.50", rating: 4.8, imgSrc: "/landing_img/shirt6.png" },
-    { id: 7, title: "Tailored Jacket", price: "$59.00", rating: 4.6, imgSrc: "/landing_img/shirt7.png" },
-    { id: 8, title: "Solid Round Neck T-shirt", price: "$25.99", rating: 4.7, imgSrc: "/landing_img/shirt8.png" },
+    { id: 1, title: "Spread Collar Shirt", price: "Rs 2,499", rating: 5.0, imgSrc: "/landing_img/shirt1.png" },
+    { id: 2, title: "White Solid Formal Shirt", price: "Rs 1,899", rating: 4.9, imgSrc: "/landing_img/shirt2.png" },
+    { id: 3, title: "Shine On Me Blouse", price: "Rs 1,699", rating: 4.8, imgSrc: "/landing_img/shirt3.png" },
+    { id: 4, title: "Gray Solid Padded Jacket", price: "Rs 3,299", rating: 4.7, imgSrc: "/landing_img/shirt4.png" },
+    { id: 5, title: "Printed Loose T-shirt", price: "Rs 1,599", rating: 5.0, imgSrc: "/landing_img/shirt5.png" },
+    { id: 6, title: "Summer Wind Crop Shirt", price: "Rs 1,299", rating: 4.8, imgSrc: "/landing_img/shirt6.png" },
+    { id: 7, title: "Tailored Jacket", price: "Rs 3,999", rating: 4.6, imgSrc: "/landing_img/shirt7.png" },
+    { id: 8, title: "Solid Round Neck T-shirt", price: "Rs 1,199", rating: 4.7, imgSrc: "/landing_img/shirt8.png" },
   ],
   SALE: [
-    { id: 9, title: "Leather Handbag", price: "$69.99", rating: 4.4, imgSrc: "/landing_img/sale1.jpg" },
-    { id: 10, title: "Summer Sunglasses", price: "$18.50", rating: 4.2, imgSrc: "/landing_img/sale2.jpg" },
-    { id: 11, title: "Vintage Belt", price: "$14.00", rating: 4.0, imgSrc: "/landing_img/sale3.jpg" },
-    { id: 12, title: "Denim Shorts", price: "$27.99", rating: 4.3, imgSrc: "/landing_img/sale4.jpg" },
-    { id: 13, title: "Graphic Tee", price: "$22.00", rating: 4.1, imgSrc: "/landing_img/sale5.jpg" },
-    { id: 14, title: "Crop Hoodie", price: "$35.00", rating: 4.5, imgSrc: "/landing_img/sale6.jpg" },
-    { id: 15, title: "Tie Dye Dress", price: "$38.99", rating: 4.6, imgSrc: "/landing_img/sale7.jpg" },
-    { id: 16, title: "Sleek Blazer", price: "$55.00", rating: 4.7, imgSrc: "/landing_img/sale8.jpg" },
+    { id: 9, title: "Leather Handbag", price: "Rs 4,499", rating: 4.4, imgSrc: "/landing_img/sale1.jpg" },
+    { id: 10, title: "Summer Sunglasses", price: "Rs 1,599", rating: 4.2, imgSrc: "/landing_img/sale2.jpg" },
+    { id: 11, title: "Vintage Belt", price: "Rs 1,299", rating: 4.0, imgSrc: "/landing_img/sale3.jpg" },
+    { id: 12, title: "Denim Shorts", price: "Rs 1,799", rating: 4.3, imgSrc: "/landing_img/sale4.jpg" },
+    { id: 13, title: "Graphic Tee", price: "Rs 1,399", rating: 4.1, imgSrc: "/landing_img/sale5.jpg" },
+    { id: 14, title: "Crop Hoodie", price: "Rs 2,199", rating: 4.5, imgSrc: "/landing_img/sale6.jpg" },
+    { id: 15, title: "Tie Dye Dress", price: "Rs 2,499", rating: 4.6, imgSrc: "/landing_img/sale7.jpg" },
+    { id: 16, title: "Sleek Blazer", price: "Rs 3,599", rating: 4.7, imgSrc: "/landing_img/sale8.jpg" },
   ],
   
   SHOES: [
-    { id: 17, title: "Running Sneakers", price: "$60.00", rating: 4.5, imgSrc: "/landing_img/shoes1.jpg" },
-    { id: 18, title: "Leather Boots", price: "$89.00", rating: 4.6, imgSrc: "/landing_img/shoes2.jpg" },
-    { id: 19, title: "Strappy Heels", price: "$48.00", rating: 4.3, imgSrc: "/landing_img/shoes3.jpg" },
-    { id: 20, title: "Slip-on Loafers", price: "$43.99", rating: 4.2, imgSrc: "/landing_img/shoes4.jpg" },
-    { id: 21, title: "Platform Sandals", price: "$39.50", rating: 4.1, imgSrc: "/landing_img/shoes5.jpg" },
-    { id: 22, title: "Canvas Sneakers", price: "$42.00", rating: 4.4, imgSrc: "/landing_img/shoes6.jpg" },
-    { id: 23, title: "Ankle Boots", price: "$70.00", rating: 4.8, imgSrc: "/landing_img/shoes7.jpg" },
-    { id: 24, title: "Mules", price: "$34.99", rating: 4.0, imgSrc: "/landing_img/shoes8.jpg" },
+    { id: 17, title: "Running Sneakers", price: "Rs 3,999", rating: 4.5, imgSrc: "/landing_img/shoes1.jpg" },
+    { id: 18, title: "Leather Boots", price: "Rs 4,999", rating: 4.6, imgSrc: "/landing_img/shoes2.jpg" },
+    { id: 19, title: "Strappy Heels", price: "Rs 2,999", rating: 4.3, imgSrc: "/landing_img/shoes3.jpg" },
+    { id: 20, title: "Slip-on Loafers", price: "Rs 2,799", rating: 4.2, imgSrc: "/landing_img/shoes4.jpg" },
+    { id: 21, title: "Platform Sandals", price: "Rs 2,499", rating: 4.1, imgSrc: "/landing_img/shoes5.jpg" },
+    { id: 22, title: "Canvas Sneakers", price: "Rs 2,699", rating: 4.4, imgSrc: "/landing_img/shoes6.jpg" },
+    { id: 23, title: "Ankle Boots", price: "Rs 4,499", rating: 4.8, imgSrc: "/landing_img/shoes7.jpg" },
+    { id: 24, title: "Mules", price: "Rs 2,199", rating: 4.0, imgSrc: "/landing_img/shoes8.jpg" },
   ],
   
   ACCESSORIES: [
-    { id: 25, title: "Gold Hoop Earrings", price: "$21.99", rating: 4.7, imgSrc: "/landing_img/acc1.jpg" },
-    { id: 26, title: "Chunky Necklace", price: "$25.00", rating: 4.6, imgSrc: "/landing_img/acc2.jpg" },
-    { id: 27, title: "Silk Scarf", price: "$17.50", rating: 4.2, imgSrc: "/landing_img/acc3.jpg" },
-    { id: 28, title: "Wide Brim Hat", price: "$29.99", rating: 4.3, imgSrc: "/landing_img/acc4.jpg" },
-    { id: 29, title: "Minimal Watch", price: "$59.99", rating: 4.9, imgSrc: "/landing_img/acc5.jpg" },
-    { id: 30, title: "Tote Bag", price: "$28.00", rating: 4.1, imgSrc: "/landing_img/acc6.jpg" },
-    { id: 31, title: "Cat-Eye Sunglasses", price: "$19.00", rating: 4.0, imgSrc: "/landing_img/acc7.jpg" },
-    { id: 32, title: "Leather Wallet", price: "$26.50", rating: 4.4, imgSrc: "/landing_img/acc8.jpg" },
+    { id: 25, title: "Gold Hoop Earrings", price: "Rs 1,399", rating: 4.7, imgSrc: "/landing_img/acc1.jpg" },
+    { id: 26, title: "Chunky Necklace", price: "Rs 1,599", rating: 4.6, imgSrc: "/landing_img/acc2.jpg" },
+    { id: 27, title: "Silk Scarf", price: "Rs 1,199", rating: 4.2, imgSrc: "/landing_img/acc3.jpg" },
+    { id: 28, title: "Wide Brim Hat", price: "Rs 1,899", rating: 4.3, imgSrc: "/landing_img/acc4.jpg" },
+    { id: 29, title: "Minimal Watch", price: "Rs 3,799", rating: 4.9, imgSrc: "/landing_img/acc5.jpg" },
+    { id: 30, title: "Tote Bag", price: "Rs 1,799", rating: 4.1, imgSrc: "/landing_img/acc6.jpg" },
+    { id: 31, title: "Cat-Eye Sunglasses", price: "Rs 1,299", rating: 4.0, imgSrc: "/landing_img/acc7.jpg" },
+    { id: 32, title: "Leather Wallet", price: "Rs 1,699", rating: 4.4, imgSrc: "/landing_img/acc8.jpg" },
   ],
 };
 
@@ -65,7 +66,10 @@ const categories = ["SALE", "HOT", "SHOES", "ACCESSORIES"];
 const TrendingSection: React.FC = () => {
   const [activeCategory, setActiveCategory] = useState("HOT");
   const [hoveredProduct, setHoveredProduct] = useState<number | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [showProductModal, setShowProductModal] = useState(false);
   const products = productMap[activeCategory] || [];
+  const router = useRouter();
 
   const [currentSlide, setCurrentSlide] = useState(0);
   const groupIntoSlides = (items: Product[]) => {
@@ -77,6 +81,21 @@ const TrendingSection: React.FC = () => {
     return slides;
   };
   const mobileSlides = groupIntoSlides(products);
+
+  const handleAddToCart = () => {
+    // Redirect to sign in
+    router.push('/sign-in');
+  };
+
+  const handleViewProduct = (product: Product) => {
+    setSelectedProduct(product);
+    setShowProductModal(true);
+  };
+
+  const closeProductModal = () => {
+    setShowProductModal(false);
+    setSelectedProduct(null);
+  };
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -339,13 +358,7 @@ const TrendingSection: React.FC = () => {
                       transition={{ duration: 0.3 }}
                     >
                       <motion.button
-                        className="bg-white/90 backdrop-blur-sm p-3 rounded-full shadow-lg hover:bg-purple-600 hover:text-white transition-colors"
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.9 }}
-                      >
-                        <FiHeart size={20} />
-                      </motion.button>
-                      <motion.button
+                        onClick={handleAddToCart}
                         className="bg-white/90 backdrop-blur-sm p-3 rounded-full shadow-lg hover:bg-purple-600 hover:text-white transition-colors"
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.9 }}
@@ -353,6 +366,7 @@ const TrendingSection: React.FC = () => {
                         <FiShoppingCart size={20} />
                       </motion.button>
                       <motion.button
+                        onClick={() => handleViewProduct(product)}
                         className="bg-white/90 backdrop-blur-sm p-3 rounded-full shadow-lg hover:bg-purple-600 hover:text-white transition-colors"
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.9 }}
@@ -393,6 +407,106 @@ const TrendingSection: React.FC = () => {
               </motion.div>
             ))}
           </motion.div>
+        </AnimatePresence>
+
+        {/* Product Modal */}
+        <AnimatePresence>
+          {showProductModal && selectedProduct && (
+            <motion.div
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-[9999]"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={closeProductModal}
+            >
+              <motion.div
+                className="bg-white rounded-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto mx-4 sm:mx-0"
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="relative flex flex-col sm:flex-row">
+                  {/* Close button */}
+                  <button
+                    onClick={closeProductModal}
+                    className="absolute top-3 right-3 z-10 bg-white/90 backdrop-blur-sm p-2 rounded-full shadow-lg hover:bg-gray-100 transition-colors"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+
+                  {/* Product Image - Left Side */}
+                  <div className="relative w-full sm:w-1/2 h-48 sm:h-full overflow-hidden rounded-t-xl sm:rounded-l-xl sm:rounded-tr-none">
+                    <Image
+                      src={selectedProduct.imgSrc}
+                      alt={selectedProduct.title}
+                      width={400}
+                      height={400}
+                      className="object-cover w-full h-full"
+                    />
+                    
+                    {/* Rating badge */}
+                    <div className="absolute top-2 left-2 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full shadow-lg">
+                      <div className="flex items-center gap-1">
+                        <FaStar className="text-yellow-400 text-xs" />
+                        <span className="text-xs font-bold">{selectedProduct.rating}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Product Details - Right Side */}
+                  <div className="w-full sm:w-1/2 p-4 flex flex-col justify-between">
+                    <div>
+                      <h2 className="text-lg sm:text-xl font-bold text-[#29224F] mb-2">
+                        {selectedProduct.title}
+                      </h2>
+                      
+                      <div className="flex items-center justify-between mb-3">
+                        <p className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
+                          {selectedProduct.price}
+                        </p>
+                        {activeCategory === "SALE" && (
+                          <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full font-bold">
+                            SALE
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Product Description */}
+                      <div className="mb-4">
+                        <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
+                          Premium quality item from our trending collection. Perfect for any occasion.
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <motion.button
+                        onClick={handleAddToCart}
+                        className="flex-1 bg-gradient-to-r from-purple-600 to-indigo-600 text-white py-2 px-3 rounded-lg font-semibold hover:from-purple-700 hover:to-indigo-700 transition-all duration-300 flex items-center justify-center gap-1 text-xs sm:text-sm"
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                      >
+                        <FiShoppingCart size={14} />
+                        Add to Cart
+                      </motion.button>
+                      <motion.button
+                        onClick={closeProductModal}
+                        className="px-4 border-2 border-purple-300 text-[#29224F] py-2 rounded-lg font-semibold hover:bg-purple-50 transition-all duration-300 text-xs sm:text-sm"
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                      >
+                        Close
+                      </motion.button>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
         </AnimatePresence>
       </div>
     </section>

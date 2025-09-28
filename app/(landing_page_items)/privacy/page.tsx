@@ -95,7 +95,7 @@ export default function PrivacyPolicyPage() {
 
             {/* Subtitle */}
             <motion.p
-              className="text-base sm:text-lg md:text-xl lg:text-2xl text-[#29224F]/80 leading-relaxed max-w-3xl mx-auto mb-8 sm:mb-12 px-4"
+              className="text-base sm:text-lg md:text-xl lg:text-2xl text-[#29224F]/80 leading-relaxed max-w-3xl mx-auto mb-0 sm:mb-0 px-4"
               initial={{ y: 30, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ duration: 0.8, delay: 0.6 }}
@@ -109,7 +109,7 @@ export default function PrivacyPolicyPage() {
 
       {/* Main Content */}
       <motion.main 
-        className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20 flex-1 space-y-12 sm:space-y-16 lg:space-y-20"
+        className="container mx-auto px-4 sm:px-6 lg:px-8 py-2 sm:py-0 lg:py-2 flex-1 space-y-12 sm:space-y-8 lg:space-y-10"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, delay: 1.2 }}
