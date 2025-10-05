@@ -8,19 +8,14 @@ import { FiSettings, FiChevronLeft, FiChevronRight, FiUpload } from "react-icons
 import { FaShoppingBag, FaMagic } from "react-icons/fa";
 import { AiOutlineStar } from "react-icons/ai";
 import { GiMirrorMirror } from "react-icons/gi";
+import VirtualTryOnPopup from "./VirtualTryOnPopup";
 
 const InfoSection: React.FC = () => {
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [hoveredCard, setHoveredCard] = useState<number | null>(null);
+  const [showVirtualTryOnPopup, setShowVirtualTryOnPopup] = useState(false);
   
   const { scrollY } = useScroll();
   const y1 = useTransform(scrollY, [0, 1000], [0, -50]);
-  
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      setSelectedFile(e.target.files[0]);
-    }
-  };
 
   // Enhanced features data
   const features = [
@@ -293,11 +288,11 @@ const InfoSection: React.FC = () => {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
-              <label
-                htmlFor="upload"
+              <button
+                onClick={() => setShowVirtualTryOnPopup(true)}
                 className="relative inline-flex items-center gap-3 bg-white text-purple-600 px-8 py-4 rounded-full font-bold text-lg cursor-pointer shadow-xl hover:shadow-2xl transition-all group overflow-hidden"
               >
-                <span className="relative z-10">Upload Here</span>
+                <span className="relative z-10">Try Virtual Try-On</span>
                 <FiUpload className="relative z-10 text-xl group-hover:animate-bounce" />
                 <motion.div
                   className="absolute inset-0 bg-gradient-to-r from-yellow-400 to-orange-400"
@@ -305,27 +300,10 @@ const InfoSection: React.FC = () => {
                   whileHover={{ x: 0 }}
                   transition={{ duration: 0.3 }}
                 />
-              </label>
-              <input
-                id="upload"
-                type="file"
-                className="hidden"
-                onChange={handleFileChange}
-              />
+              </button>
             </motion.div>
           </motion.div>
 
-          {/* Display Selected File with animation */}
-          {selectedFile && (
-            <motion.div
-              className="text-center mt-6 p-4 bg-green-50 rounded-lg"
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
-            >
-              <span className="text-green-600 font-medium">✓ Selected: {selectedFile.name}</span>
-            </motion.div>
-          )}
         </motion.div>
 
         {/* Enhanced Wardrobe Section */}
@@ -605,6 +583,11 @@ const InfoSection: React.FC = () => {
           ))}
         </motion.div>
       </div>
+
+      {/* Virtual Try-On Popup */}
+      {showVirtualTryOnPopup && (
+        <VirtualTryOnPopup onClose={() => setShowVirtualTryOnPopup(false)} />
+      )}
     </section>
   );
 };
