@@ -29,7 +29,7 @@ export default function UploadWardrobePage() {
   const [showWebcam, setShowWebcam] = useState(false);
   const [userId, setUserId]     = useState<string>('');
   const [isDragOver, setIsDragOver] = useState(false);
-  const API_URL = process.env.NEXT_PUBLIC_CATEGORIZATION_URL!;
+  const API_URL = '/api/categorize';
 
   // get user ID
   useEffect(() => {
