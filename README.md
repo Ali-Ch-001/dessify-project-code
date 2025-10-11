@@ -287,9 +287,18 @@ npm run dev
 
 ### Categorization & Tagging
 
-1. **Automatic Detection**: AI model suggests labels.
-2. **Manual Override**: Edit category, add or remove tags.
-3. **Tag Learning**: Corrected tags feed back into model for improved accuracy.
+The wardrobe upload system includes an integrated categorization API endpoint at `/api/categorize` that:
+
+1. **Accepts Image Upload**: Receives image file and user ID via FormData
+2. **Uploads to Supabase Storage**: Stores images in the `userwardrobe` bucket organized by user ID
+3. **Gets Public URL**: Generates a publicly accessible URL for the stored image
+4. **AI Categorization** (Optional): Calls an external AI service (via Gradio) to automatically categorize the clothing item
+5. **Saves to Database**: Inserts the item record into the `userwardrobe` table with the image URL and category
+6. **Returns Response**: Provides the caller with `{success, id, image_url, category}`
+
+**Automatic Detection**: AI model suggests labels (when `NEXT_PUBLIC_AI_CATEGORIZATION_SERVICE` is configured).
+**Manual Override**: Edit category, add or remove tags through the Closet Manager interface.
+**Tag Learning**: Corrected tags feed back into model for improved accuracy.
 
 ### Dashboard & Filters
 
