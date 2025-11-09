@@ -11,7 +11,6 @@ import {
   Loader2,
   AlertCircle,
   CheckCircle,
-  Image as ImageIcon,
   Filter,
   X,
   Download,
@@ -52,7 +51,7 @@ type RecommendationParams = {
 
 type RecommendationResult = {
   outfitImages: string[];
-  outfitDetails: any;
+  outfitDetails: Record<string, unknown> | null;
 };
 
 // Helper function to format tag values for display

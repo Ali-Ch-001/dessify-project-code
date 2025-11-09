@@ -1,33 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Client } from '@gradio/client';
 
-interface GradioFileData {
-  path: string;
-  url: string;
-  size: number | null;
-  orig_name: string;
-  mime_type: string | null;
-  is_stream: boolean;
-  meta: {
-    _type: string;
-  };
-}
-
-interface RecommendationParams {
-  files: File[];
-  occasion?: string;
-  weather?: string;
-  num_outfits?: number;
-  outfit_style?: string;
-  color_preference?: string;
-  fit_preference?: string;
-  material_preference?: string;
-  season?: string;
-  time_of_day?: string;
-  budget?: string;
-  personal_style?: string;
-}
-
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
@@ -260,14 +233,14 @@ export async function POST(request: NextRequest) {
                 }
               } else if (item && typeof item === 'object') {
                 // Gradio FileData format - can be nested or flat
-                const fileData = item as any;
+                const fileData = item as Record<string, unknown>;
                 console.log(`FileData object keys:`, Object.keys(fileData));
                 
                 // Check for nested structure: { image: { url: "...", path: "..." }, caption: "..." }
-                let imageData = fileData;
+                let imageData: Record<string, unknown> = fileData;
                 if ('image' in fileData && typeof fileData.image === 'object' && fileData.image !== null) {
                   console.log(`Found nested image structure, extracting from image property`);
-                  imageData = fileData.image;
+                  imageData = fileData.image as Record<string, unknown>;
                 }
                 
                 // Now check for url or path in imageData
@@ -286,12 +259,11 @@ export async function POST(request: NextRequest) {
                   console.log(`Received file path: ${path}`);
                   
                   // If it's a Gradio temp file, Gradio should have converted it to a URL
-                  // But if we only have a path, try to construct the Space URL
+                  // But if we only have a path, we can't access it from the client
                   if (path.includes('/tmp/') || path.includes('gradio')) {
                     // For Hugging Face Spaces, files are typically served via the Space URL
                     // The path might need to be converted by Gradio, but if it's not,
-                    // we can try constructing the URL (this may not always work)
-                    const spaceUrl = 'https://stylique-recomendation.hf.space'; // Update if needed
+                    // we can't access local paths from the client
                     // Note: This is a fallback - Gradio should provide the URL
                     console.warn('Received local path, Gradio should have provided URL. Path:', path);
                   } else {
@@ -311,7 +283,7 @@ export async function POST(request: NextRequest) {
             console.log(`Added single URL: ${galleryData.substring(0, 100)}`);
           } else if (galleryData && typeof galleryData === 'object') {
             // Single FileData object
-            const fileData = galleryData as any;
+            const fileData = galleryData as Record<string, unknown>;
             if ('url' in fileData && typeof fileData.url === 'string') {
               const url = fileData.url;
               if (url.startsWith('http')) {

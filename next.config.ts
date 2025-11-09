@@ -7,9 +7,17 @@ const supabaseHost = supabaseUrl ? new URL(supabaseUrl).hostname : "";
 
 const nextConfig: NextConfig = {
   images: {
-    domains: [
+    remotePatterns: [
       // trust your Supabase storage bucket domain
-      supabaseHost,
+      {
+        protocol: 'https',
+        hostname: supabaseHost,
+      },
+      // Hugging Face Spaces for AI-generated images (recommendations, try-on, background removal)
+      {
+        protocol: 'https',
+        hostname: '*.hf.space',
+      },
     ],
   },
   // …any other config options you already have
