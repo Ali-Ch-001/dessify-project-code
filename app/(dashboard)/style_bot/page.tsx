@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import { supabase } from "@/lib/supabaseClient";
@@ -27,6 +27,10 @@ import {
   Clock,
   DollarSign,
   User,
+  MessageSquare,
+  Send,
+  Bot,
+  Plus,
 } from "lucide-react";
 
 type WardrobeItem = {
@@ -54,6 +58,19 @@ type RecommendationResult = {
   outfitDetails: Record<string, unknown> | null;
 };
 
+type ChatMessage = {
+  id: string;
+  role: "user" | "bot";
+  content: string;
+  timestamp: Date;
+};
+
+type MatchedTag = {
+  category: string;
+  tag: string;
+  confidence: number;
+};
+
 // Helper function to format tag values for display
 const formatTagLabel = (value: string): string => {
   if (value === "None") return "None";
@@ -64,148 +81,17 @@ const formatTagLabel = (value: string): string => {
     .join(" ");
 };
 
-// Tag options matching the Gradio API specification exactly
-const TAG_OPTIONS = {
-  occasion: [
-    "casual",
-    "business",
-    "formal",
-    "semi_formal",
-    "business_casual",
-    "cocktail",
-    "wedding",
-    "party",
-    "date",
-    "sport",
-    "workout",
-    "travel",
-    "beach",
-    "outdoor",
-    "night_out",
-    "brunch",
-    "dinner",
-    "meeting",
-    "interview",
-    "cultural",
-    "traditional",
-  ],
-  weather: [
-    "any",
-    "hot",
-    "warm",
-    "mild",
-    "cool",
-    "cold",
-    "freezing",
-    "rain",
-    "snow",
-    "windy",
-    "humid",
-    "sunny",
-    "cloudy",
-  ],
-  outfit_style: [
-    "casual",
-    "smart_casual",
-    "formal",
-    "sporty",
-    "athletic",
-    "streetwear",
-    "minimalist",
-    "classic",
-    "modern",
-    "elegant",
-    "sophisticated",
-    "traditional",
-    "ethnic",
-  ],
-  color_preference: [
-    "None",
-    "neutral",
-    "monochromatic",
-    "monochrome",
-    "complementary",
-    "bold",
-    "subtle",
-    "bright",
-    "muted",
-    "pastel",
-    "dark",
-    "light",
-    "earth_tones",
-    "jewel_tones",
-    "black_white",
-    "navy_white",
-    "colorful",
-    "minimal_color",
-  ],
-  fit_preference: [
-    "None",
-    "fitted",
-    "loose",
-    "oversized",
-    "relaxed",
-    "comfortable",
-    "structured",
-    "flowy",
-    "tailored",
-    "athletic_fit",
-    "regular_fit",
-  ],
-  material_preference: [
-    "None",
-    "cotton",
-    "linen",
-    "silk",
-    "wool",
-    "cashmere",
-    "denim",
-    "leather",
-    "breathable",
-    "waterproof",
-    "moisture_wicking",
-    "sustainable",
-  ],
-  season: [
-    "None",
-    "spring",
-    "summer",
-    "fall",
-    "autumn",
-    "winter",
-    "year_round",
-    "transitional",
-  ],
-  time_of_day: [
-    "None",
-    "morning",
-    "afternoon",
-    "evening",
-    "night",
-    "all_day",
-  ],
-  budget: [
-    "None",
-    "luxury",
-    "premium",
-    "mid_range",
-    "affordable",
-    "budget",
-    "value",
-  ],
-  personal_style: [
-    "None",
-    "conservative",
-    "moderate",
-    "bold",
-    "experimental",
-    "traditional",
-    "trendy",
-    "timeless",
-    "fashion_forward",
-    "classic",
-    "eclectic",
-  ],
+type TagOptions = {
+  occasion: string[];
+  weather: string[];
+  outfit_style: string[];
+  color_preference: string[];
+  fit_preference: string[];
+  material_preference: string[];
+  season: string[];
+  time_of_day: string[];
+  budget: string[];
+  personal_style: string[];
 };
 
 export default function StyleBotPage() {
@@ -217,6 +103,16 @@ export default function StyleBotPage() {
   const [results, setResults] = useState<RecommendationResult | null>(null);
   const [selectedOutfit, setSelectedOutfit] = useState<string | null>(null);
   const [showDetails, setShowDetails] = useState(false);
+  
+  // Chat and tags state
+  const [tagOptions, setTagOptions] = useState<TagOptions | null>(null);
+  const [isLoadingTags, setIsLoadingTags] = useState(true);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [userMessage, setUserMessage] = useState("");
+  const [matchedTags, setMatchedTags] = useState<MatchedTag[]>([]);
+  const [showTagSelection, setShowTagSelection] = useState(false);
+  const [pendingQuestions, setPendingQuestions] = useState<{category: string; options: string[]} | null>(null);
+  const chatEndRef = useRef<HTMLDivElement>(null);
 
   // Recommendation parameters
   const [params, setParams] = useState<RecommendationParams>({
@@ -274,13 +170,473 @@ export default function StyleBotPage() {
     }
   }, []);
 
+  // Fetch tags from backend
+  const fetchTags = useCallback(async () => {
+    setIsLoadingTags(true);
+    try {
+      const response = await fetch("/api/tags");
+      if (!response.ok) {
+        throw new Error("Failed to fetch tags");
+      }
+      const data = await response.json();
+      if (data.success && data.data) {
+        setTagOptions(data.data);
+      }
+    } catch (err) {
+      console.error("Error fetching tags:", err);
+      setError("Failed to load style tags");
+    } finally {
+      setIsLoadingTags(false);
+    }
+  }, []);
+
   useEffect(() => {
     if (authReady) {
       fetchWardrobe();
+      fetchTags();
     }
     // Only fetch once when auth is ready, don't refetch on every render
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authReady]);
+
+  // Auto-scroll chat to bottom when new messages arrive
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [chatMessages]);
+
+  // Extract tags from user message
+  const extractTagsFromMessage = (message: string): MatchedTag[] => {
+    if (!tagOptions) return [];
+    
+    const matches: MatchedTag[] = [];
+    const lowerMessage = message.toLowerCase();
+    
+    // Check if this looks like a question (starts with question words)
+    const isQuestion = /^(what|how|when|where|why|who|which|can|could|would|should|is|are|do|does|did|will|may|might)/i.test(message.trim());
+    
+    // Check each category
+    Object.entries(tagOptions).forEach(([category, tags]) => {
+      tags.forEach((tag) => {
+        if (tag === "None" || tag === "any") return;
+        
+        const lowerTag = tag.toLowerCase();
+        const tagWords = lowerTag.split("_");
+        
+        // Check for exact match or word match
+        let confidence = 0;
+        
+        // Use word boundaries for better matching (avoid partial word matches)
+        const tagRegex = new RegExp(`\\b${lowerTag.replace(/_/g, '\\s+')}\\b`, 'i');
+        const exactMatch = tagRegex.test(lowerMessage);
+        
+        if (exactMatch) {
+          confidence = 1.0; // Exact match with word boundaries
+        } else if (lowerMessage.includes(lowerTag)) {
+          // Check if it's a standalone word (not part of another word)
+          const standaloneRegex = new RegExp(`(^|\\s)${lowerTag}(\\s|$|[^a-z])`, 'i');
+          if (standaloneRegex.test(lowerMessage)) {
+            confidence = 0.9; // Standalone word match
+          }
+        } else if (tagWords.length > 1) {
+          // For multi-word tags, check if all words are present
+          const allWordsPresent = tagWords.every(word => {
+            const wordRegex = new RegExp(`\\b${word}\\b`, 'i');
+            return wordRegex.test(lowerMessage);
+          });
+          if (allWordsPresent) {
+            confidence = 0.8; // All words present
+          }
+        } else if (tagWords.length === 1) {
+          // For single word tags, be more strict
+          const wordRegex = new RegExp(`\\b${tagWords[0]}\\b`, 'i');
+          if (wordRegex.test(lowerMessage)) {
+            confidence = 0.8; // Single word with boundary
+          }
+        }
+        
+        // If it's a question and confidence is low, reduce it further
+        if (isQuestion && confidence < 0.9) {
+          confidence = 0; // Don't match low confidence in questions
+        }
+        
+        if (confidence > 0) {
+          matches.push({
+            category,
+            tag,
+            confidence,
+          });
+        }
+      });
+    });
+    
+    // Filter out low confidence matches (only keep high confidence)
+    const highConfidenceMatches = matches.filter(m => m.confidence >= 0.8);
+    
+    // Sort by confidence and remove duplicates
+    return highConfidenceMatches
+      .sort((a, b) => b.confidence - a.confidence)
+      .filter((match, index, self) => 
+        index === self.findIndex(m => m.category === match.category && m.tag === match.tag)
+      );
+  };
+
+  // Handle user message
+  const handleSendMessage = () => {
+    if (!userMessage.trim() || !tagOptions) return;
+    
+    const message = userMessage.trim();
+    
+    // Add user message to chat
+    const newUserMessage: ChatMessage = {
+      id: Date.now().toString(),
+      role: "user",
+      content: message,
+      timestamp: new Date(),
+    };
+    setChatMessages((prev) => [...prev, newUserMessage]);
+
+    
+    // Check if user is answering a pending question
+    if (pendingQuestions) {
+      const extractedTags = extractTagsFromMessage(message);
+      const relevantMatch = extractedTags.find(t => t.category === pendingQuestions.category);
+      
+      if (relevantMatch) {
+        applyTag(pendingQuestions.category, relevantMatch.tag);
+        setPendingQuestions(null);
+        setUserMessage("");
+        return;
+      }
+    }
+    
+    // Extract preferences from message
+    const extractedTags = extractTagsFromMessage(message);
+    
+    // Check if occasion is mentioned
+    const occasionMatch = extractedTags.find(t => t.category === "occasion");
+    
+    if (occasionMatch) {
+      // Apply occasion first
+      const updatedParams = {
+        ...params,
+        occasion: occasionMatch.tag,
+      };
+      setParams(updatedParams);
+      
+      // Add confirmation and ask follow-up questions
+      const botResponse: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        role: "bot",
+        content: `Perfect! I see you're looking for a ${formatTagLabel(occasionMatch.tag)} outfit. Let me help you find the perfect look!`,
+        timestamp: new Date(),
+      };
+      setChatMessages((prev) => [...prev, botResponse]);
+      
+      // Ask about weather
+      setTimeout(() => {
+        const weatherQuestion: ChatMessage = {
+          id: (Date.now() + 2).toString(),
+          role: "bot",
+          content: "What's the weather like? Is it hot, cold, rainy, or something else?",
+          timestamp: new Date(),
+        };
+        setChatMessages((prev) => [...prev, weatherQuestion]);
+        setPendingQuestions({ category: "weather", options: tagOptions.weather });
+      }, 800);
+      
+      setUserMessage("");
+      return;
+    }
+    
+    if (extractedTags.length > 0) {
+      // Filter out occasion since we handle it separately
+      const otherMatches = extractedTags.filter(t => t.category !== "occasion");
+      
+      if (otherMatches.length > 0) {
+        setMatchedTags(otherMatches);
+        setShowTagSelection(true);
+        
+        // Create bot response
+        const botResponse: ChatMessage = {
+          id: (Date.now() + 1).toString(),
+          role: "bot",
+          content: `I found some preferences in your message. Which ones would you like to use?`,
+          timestamp: new Date(),
+        };
+        setChatMessages((prev) => [...prev, botResponse]);
+      } else {
+        // Only occasion was found, already handled above
+        setUserMessage("");
+        return;
+      }
+    } else {
+      // No preferences found - show occasion options
+      const isQuestion = /^(what|how|when|where|why|who|which|can|could|would|should|is|are|do|does|did|will|may|might)/i.test(message.trim());
+      
+      let botResponse: ChatMessage;
+      if (isQuestion) {
+        // User asked a question we don't understand
+        botResponse = {
+          id: (Date.now() + 1).toString(),
+          role: "bot",
+          content: "I'm not sure I understand that question. Let me help you pick an occasion for your outfit:",
+          timestamp: new Date(),
+        };
+      } else {
+        // User said something we don't recognize - show occasion options
+        botResponse = {
+          id: (Date.now() + 1).toString(),
+          role: "bot",
+          content: "I'd love to help you find the perfect outfit! What's the occasion? Please select one:",
+          timestamp: new Date(),
+        };
+      }
+      setChatMessages((prev) => [...prev, botResponse]);
+      
+      // Show occasion options from dropdown
+      if (tagOptions && tagOptions.occasion) {
+        setMatchedTags(
+          tagOptions.occasion.map(occ => ({
+            category: "occasion",
+            tag: occ,
+            confidence: 1.0,
+          }))
+        );
+        setShowTagSelection(true);
+      }
+    }
+    
+    setUserMessage("");
+  };
+
+  // Reset chat to start fresh
+  const resetChat = () => {
+    setChatMessages([]);
+    setUserMessage("");
+    setMatchedTags([]);
+    setShowTagSelection(false);
+    setPendingQuestions(null);
+    setResults(null);
+    setError(null);
+    resetParams();
+  };
+
+  // Get next question category to ask
+  const getNextQuestion = (currentParams: RecommendationParams): {category: string; question: string; options: string[]} | null => {
+    if (currentParams.weather === "any") {
+      return { category: "weather", question: "What's the weather like?", options: tagOptions?.weather.filter(w => w !== "any") || [] };
+    }
+    if (currentParams.material_preference === "None") {
+      return { category: "material_preference", question: "Any material preference? Like cotton, silk, or something else?", options: tagOptions?.material_preference.filter(m => m !== "None") || [] };
+    }
+    if (currentParams.fit_preference === "None") {
+      return { category: "fit_preference", question: "How do you like your clothes to fit? Fitted, loose, or comfortable?", options: tagOptions?.fit_preference.filter(f => f !== "None") || [] };
+    }
+    if (currentParams.time_of_day === "None") {
+      return { category: "time_of_day", question: "What time of day is this for? Morning, afternoon, evening, or night?", options: tagOptions?.time_of_day.filter(t => t !== "None") || [] };
+    }
+    if (currentParams.season === "None") {
+      return { category: "season", question: "What season is it? Spring, summer, fall, or winter?", options: tagOptions?.season.filter(s => s !== "None") || [] };
+    }
+    if (currentParams.color_preference === "None") {
+      return { category: "color_preference", question: "Any color preference? Like neutral, bold, or pastel?", options: tagOptions?.color_preference.filter(c => c !== "None") || [] };
+    }
+    if (currentParams.budget === "None") {
+      return { category: "budget", question: "What's your budget range? Luxury, premium, or affordable?", options: tagOptions?.budget.filter(b => b !== "None") || [] };
+    }
+    if (currentParams.personal_style === "None") {
+      return { category: "personal_style", question: "What's your personal style? Classic, trendy, or bold?", options: tagOptions?.personal_style.filter(p => p !== "None") || [] };
+    }
+    return null;
+  };
+
+  // Apply selected preference to params
+  const applyTag = async (category: string, tag: string, skipGeneration = false) => {
+    const updatedParams = {
+      ...params,
+      [category]: tag,
+    };
+    setParams(updatedParams);
+    
+    // Add confirmation message
+    const categoryLabels: Record<string, string> = {
+      occasion: "occasion",
+      weather: "weather",
+      outfit_style: "style",
+      color_preference: "color preference",
+      fit_preference: "fit",
+      material_preference: "material",
+      season: "season",
+      time_of_day: "time of day",
+      budget: "budget",
+      personal_style: "personal style",
+    };
+    
+    const categoryLabel = categoryLabels[category] || category;
+    const confirmationMessages: Record<string, string> = {
+      occasion: `Perfect! A ${formatTagLabel(tag)} outfit it is!`,
+      weather: `Got it! ${formatTagLabel(tag)} weather.`,
+      outfit_style: `Love it! ${formatTagLabel(tag)} style.`,
+      color_preference: `Great choice! ${formatTagLabel(tag)} colors.`,
+      fit_preference: `Perfect! ${formatTagLabel(tag)} fit.`,
+      material_preference: `Nice! ${formatTagLabel(tag)} material.`,
+      season: `Understood! ${formatTagLabel(tag)} season.`,
+      time_of_day: `Got it! ${formatTagLabel(tag)}.`,
+      budget: `Perfect! ${formatTagLabel(tag)} budget.`,
+      personal_style: `Love it! ${formatTagLabel(tag)} style.`,
+    };
+    
+    const botResponse: ChatMessage = {
+      id: Date.now().toString(),
+      role: "bot",
+      content: confirmationMessages[category] || `Great! I've noted your ${categoryLabel} preference.`,
+      timestamp: new Date(),
+    };
+    setChatMessages((prev) => [...prev, botResponse]);
+    
+    // Hide the selection panel immediately when any option is clicked
+    setShowTagSelection(false);
+    
+    // Remove this tag from matched tags
+    setMatchedTags((prev) => {
+      return prev.filter(t => !(t.category === category && t.tag === tag));
+    });
+
+    // Ask next question or generate recommendations
+    if (!skipGeneration) {
+      setTimeout(() => {
+        const nextQ = getNextQuestion(updatedParams);
+        if (nextQ && tagOptions) {
+          const questionMsg: ChatMessage = {
+            id: (Date.now() + 1).toString(),
+            role: "bot",
+            content: nextQ.question,
+            timestamp: new Date(),
+          };
+          setChatMessages((prev) => [...prev, questionMsg]);
+          setPendingQuestions({ category: nextQ.category, options: nextQ.options });
+        } else {
+          // All questions answered, generate recommendations
+          generateRecommendationsFromParams(updatedParams);
+        }
+      }, 800);
+    }
+  };
+
+  // Generate recommendations from params
+  const generateRecommendationsFromParams = async (paramsToUse: RecommendationParams) => {
+    if (wardrobeItems.length < 2) {
+      const warningMessage: ChatMessage = {
+        id: Date.now().toString(),
+        role: "bot",
+        content: "I need at least 2 items in your wardrobe to generate outfit recommendations. Please upload more items first.",
+        timestamp: new Date(),
+      };
+      setChatMessages((prev) => [...prev, warningMessage]);
+      return;
+    }
+
+    setIsGenerating(true);
+    setError(null);
+    setResults(null);
+
+    const loadingMessage: ChatMessage = {
+      id: Date.now().toString(),
+      role: "bot",
+      content: "Perfect! Let me create some amazing outfit recommendations for you...",
+      timestamp: new Date(),
+    };
+    setChatMessages((prev) => [...prev, loadingMessage]);
+
+    try {
+      // Convert wardrobe to files
+      const wardrobeFiles = await convertWardrobeToFiles();
+      
+      if (wardrobeFiles.length === 0) {
+        throw new Error("Failed to load wardrobe images");
+      }
+
+      if (wardrobeFiles.length < 2) {
+        throw new Error(`Only ${wardrobeFiles.length} wardrobe image(s) could be loaded. You need at least 2 items to generate outfits.`);
+      }
+
+      console.log(`Sending ${wardrobeFiles.length} wardrobe files to API...`);
+      console.log('Params being sent to API:', paramsToUse);
+
+      // Prepare form data with params
+      const formData = new FormData();
+      wardrobeFiles.forEach((file, index) => {
+        formData.append("files", file);
+        console.log(`Added file ${index + 1}: ${file.name} (${file.size} bytes)`);
+      });
+      formData.append("occasion", paramsToUse.occasion);
+      formData.append("weather", paramsToUse.weather);
+      formData.append("num_outfits", paramsToUse.num_outfits.toString());
+      formData.append("outfit_style", paramsToUse.outfit_style);
+      formData.append("color_preference", paramsToUse.color_preference);
+      formData.append("fit_preference", paramsToUse.fit_preference);
+      formData.append("material_preference", paramsToUse.material_preference);
+      formData.append("season", paramsToUse.season);
+      formData.append("time_of_day", paramsToUse.time_of_day);
+      formData.append("budget", paramsToUse.budget);
+      formData.append("personal_style", paramsToUse.personal_style);
+      
+      // Log all form data values to verify skipped values are "None"
+      console.log('Form data values being sent:');
+      console.log('occasion:', paramsToUse.occasion);
+      console.log('weather:', paramsToUse.weather);
+      console.log('color_preference:', paramsToUse.color_preference);
+      console.log('fit_preference:', paramsToUse.fit_preference);
+      console.log('material_preference:', paramsToUse.material_preference);
+      console.log('season:', paramsToUse.season);
+      console.log('time_of_day:', paramsToUse.time_of_day);
+      console.log('budget:', paramsToUse.budget);
+      console.log('personal_style:', paramsToUse.personal_style);
+
+      // Call API
+      const response = await fetch("/api/recommend", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: "Unknown error" }));
+        throw new Error(errorData.error || `API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      if (data.success && data.data) {
+        setResults(data.data);
+        
+        // Add success message
+        const successMessage: ChatMessage = {
+          id: (Date.now() + 1).toString(),
+          role: "bot",
+          content: `Perfect! I've created ${data.data.outfitImages?.length || 0} amazing outfit recommendation(s) for you. Check them out below!`,
+          timestamp: new Date(),
+        };
+        setChatMessages((prev) => [...prev, successMessage]);
+      } else {
+        throw new Error(data.error || "Failed to get recommendations");
+      }
+    } catch (err) {
+      console.error("Error generating recommendations:", err);
+      const errorMsg = err instanceof Error ? err.message : "Failed to generate recommendations";
+      setError(errorMsg);
+      
+      // Add error message to chat
+      const errorMessage: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        role: "bot",
+        content: `Sorry, I couldn't create recommendations right now: ${errorMsg}`,
+        timestamp: new Date(),
+      };
+      setChatMessages((prev) => [...prev, errorMessage]);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   // Convert wardrobe image URLs to Files
   const convertWardrobeToFiles = async (): Promise<File[]> => {
@@ -521,12 +877,143 @@ export default function StyleBotPage() {
         )}
       </AnimatePresence>
 
-      {/* Tag Selection Panel */}
+      {/* Chat Interface */}
       <motion.div
         className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-gray-200"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.05 }}
+      >
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <MessageSquare className="w-5 h-5 text-purple-600" />
+            <h2 className="text-xl font-bold text-gray-800">Chat with Style Bot</h2>
+          </div>
+          <button
+            onClick={resetChat}
+            className="p-2 hover:bg-purple-50 rounded-lg transition-colors text-purple-600 hover:text-purple-700"
+            title="Start new conversation"
+          >
+            <Plus size={20} />
+          </button>
+        </div>
+        
+        {/* Chat Messages */}
+        <div className="h-64 overflow-y-auto mb-4 space-y-3 p-4 bg-gray-50 rounded-lg">
+          {chatMessages.length === 0 ? (
+            <div className="text-center text-gray-500 py-8">
+              <Bot className="w-12 h-12 mx-auto mb-2 text-purple-400" />
+              <p>Start a conversation! Try saying:</p>
+              <p className="text-sm mt-2">&quot;I have to go to a wedding&quot;</p>
+              <p className="text-sm">&quot;The weather is summer&quot;</p>
+              <p className="text-sm">&quot;I want something casual&quot;</p>
+            </div>
+          ) : (
+            <>
+              {chatMessages.map((msg) => (
+                <motion.div
+                  key={msg.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+                >
+                  <div
+                    className={`max-w-[80%] rounded-lg px-4 py-2 ${
+                      msg.role === "user"
+                        ? "bg-purple-600 text-white"
+                        : "bg-white text-gray-800 border border-gray-200"
+                    }`}
+                  >
+                    <p className="text-sm">{msg.content}</p>
+                  </div>
+                </motion.div>
+              ))}
+              <div ref={chatEndRef} />
+            </>
+          )}
+        </div>
+
+        {/* Matched Preferences Selection */}
+        {showTagSelection && matchedTags.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="mb-4 p-4 bg-purple-50 rounded-lg border border-purple-200"
+          >
+            <p className="text-sm font-medium text-purple-800 mb-2">I found these preferences:</p>
+            <div className="flex flex-wrap gap-2">
+              {matchedTags.map((matched, index) => (
+                <button
+                  key={`${matched.category}-${matched.tag}-${index}`}
+                  onClick={() => applyTag(matched.category, matched.tag)}
+                  className="px-3 py-1 bg-purple-600 text-white rounded-full text-xs hover:bg-purple-700 transition-colors"
+                >
+                  {formatTagLabel(matched.category)}: {formatTagLabel(matched.tag)}
+                </button>
+              ))}
+            </div>
+          </motion.div>
+        )}
+
+        {/* Pending Question Options */}
+        {pendingQuestions && tagOptions && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="mb-4 p-4 bg-blue-50 rounded-lg border border-blue-200"
+          >
+            <p className="text-sm font-medium text-blue-800 mb-2">Quick options:</p>
+            <div className="flex flex-wrap gap-2">
+              {pendingQuestions.options.map((option) => (
+                <button
+                  key={option}
+                  onClick={() => {
+                    applyTag(pendingQuestions.category, option);
+                    setPendingQuestions(null);
+                  }}
+                  className="px-3 py-1 bg-blue-600 text-white rounded-full text-xs hover:bg-blue-700 transition-colors"
+                >
+                  {formatTagLabel(option)}
+                </button>
+              ))}
+            </div>
+          </motion.div>
+        )}
+
+        {/* Message Input */}
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={userMessage}
+            onChange={(e) => setUserMessage(e.target.value)}
+            onKeyPress={(e) => {
+              if (e.key === "Enter") {
+                handleSendMessage();
+              }
+            }}
+            placeholder="Type your message... (e.g., 'I have to go to a wedding')"
+            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            disabled={!tagOptions || isLoadingTags}
+          />
+          <button
+            onClick={handleSendMessage}
+            disabled={!userMessage.trim() || !tagOptions || isLoadingTags}
+            className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+          >
+            <Send size={18} />
+          </button>
+        </div>
+      </motion.div>
+
+      {/* Tag Selection Panel - Hidden */}
+      <motion.div
+        className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-gray-200 hidden"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
+        style={{ display: 'none' }}
       >
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
@@ -554,7 +1041,7 @@ export default function StyleBotPage() {
               onChange={(e) => setParams({ ...params, occasion: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
             >
-              {TAG_OPTIONS.occasion.map((opt) => (
+              {tagOptions?.occasion.map((opt) => (
                 <option key={opt} value={opt}>
                   {formatTagLabel(opt)}
                 </option>
@@ -573,7 +1060,7 @@ export default function StyleBotPage() {
               onChange={(e) => setParams({ ...params, weather: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
             >
-              {TAG_OPTIONS.weather.map((opt) => (
+              {tagOptions?.weather.map((opt) => (
                 <option key={opt} value={opt}>
                   {formatTagLabel(opt)}
                 </option>
@@ -608,7 +1095,7 @@ export default function StyleBotPage() {
               onChange={(e) => setParams({ ...params, outfit_style: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
             >
-              {TAG_OPTIONS.outfit_style.map((opt) => (
+              {tagOptions?.outfit_style.map((opt) => (
                 <option key={opt} value={opt}>
                   {formatTagLabel(opt)}
                 </option>
@@ -627,7 +1114,7 @@ export default function StyleBotPage() {
               onChange={(e) => setParams({ ...params, color_preference: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
             >
-              {TAG_OPTIONS.color_preference.map((opt) => (
+              {tagOptions?.color_preference.map((opt) => (
                 <option key={opt} value={opt}>
                   {formatTagLabel(opt)}
                 </option>
@@ -646,7 +1133,7 @@ export default function StyleBotPage() {
               onChange={(e) => setParams({ ...params, fit_preference: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
             >
-              {TAG_OPTIONS.fit_preference.map((opt) => (
+              {tagOptions?.fit_preference.map((opt) => (
                 <option key={opt} value={opt}>
                   {formatTagLabel(opt)}
                 </option>
@@ -665,7 +1152,7 @@ export default function StyleBotPage() {
               onChange={(e) => setParams({ ...params, material_preference: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
             >
-              {TAG_OPTIONS.material_preference.map((opt) => (
+              {tagOptions?.material_preference.map((opt) => (
                 <option key={opt} value={opt}>
                   {formatTagLabel(opt)}
                 </option>
@@ -684,7 +1171,7 @@ export default function StyleBotPage() {
               onChange={(e) => setParams({ ...params, season: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
             >
-              {TAG_OPTIONS.season.map((opt) => (
+              {tagOptions?.season.map((opt) => (
                 <option key={opt} value={opt}>
                   {formatTagLabel(opt)}
                 </option>
@@ -703,7 +1190,7 @@ export default function StyleBotPage() {
               onChange={(e) => setParams({ ...params, time_of_day: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
             >
-              {TAG_OPTIONS.time_of_day.map((opt) => (
+              {tagOptions?.time_of_day.map((opt) => (
                 <option key={opt} value={opt}>
                   {formatTagLabel(opt)}
                 </option>
@@ -722,7 +1209,7 @@ export default function StyleBotPage() {
               onChange={(e) => setParams({ ...params, budget: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
             >
-              {TAG_OPTIONS.budget.map((opt) => (
+              {tagOptions?.budget.map((opt) => (
                 <option key={opt} value={opt}>
                   {formatTagLabel(opt)}
                 </option>
@@ -741,7 +1228,7 @@ export default function StyleBotPage() {
               onChange={(e) => setParams({ ...params, personal_style: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
             >
-              {TAG_OPTIONS.personal_style.map((opt) => (
+              {tagOptions?.personal_style.map((opt) => (
                 <option key={opt} value={opt}>
                   {formatTagLabel(opt)}
                 </option>
@@ -788,6 +1275,20 @@ export default function StyleBotPage() {
             exit={{ opacity: 0, y: -20 }}
             className="space-y-6"
           >
+            {(() => {
+              const includesShop = !!(results?.outfitDetails &&
+                typeof results.outfitDetails === 'object' &&
+                JSON.stringify(results.outfitDetails).toLowerCase().includes('shop'));
+              return (
+                <div className="flex items-center gap-2">
+                  <span className="text-xs px-2 py-1 rounded-full border inline-flex items-center gap-1
+                    bg-white text-gray-700 border-gray-200">
+                    <span className="inline-block w-2 h-2 rounded-full bg-green-500" />
+                    {includesShop ? 'Includes Shop Your Style items' : 'From your wardrobe'}
+                  </span>
+                </div>
+              );
+            })()}
             {/* Results Header */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -847,6 +1348,20 @@ export default function StyleBotPage() {
                       className="object-cover transition-transform duration-300 group-hover:scale-105"
                       unoptimized
                     />
+                    {/* Source badge overlay */}
+                    <div className="absolute top-3 left-3">
+                      {(() => {
+                        const includesShop = !!(results?.outfitDetails &&
+                          typeof results.outfitDetails === 'object' &&
+                          JSON.stringify(results.outfitDetails).toLowerCase().includes('shop'));
+                        return (
+                          <span className={`text-[10px] md:text-xs px-2 py-1 rounded-full shadow 
+                            ${includesShop ? 'bg-indigo-600 text-white' : 'bg-emerald-600 text-white'}`}>
+                            {includesShop ? 'Shop Your Style' : 'Your Wardrobe'}
+                          </span>
+                        );
+                      })()}
+                    </div>
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                     <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                       <div className="bg-white/90 backdrop-blur-sm rounded-full p-2">
