@@ -1983,7 +1983,6 @@ export default function StyleBotPage() {
               setSelectedOutfitIndex(null);
             }}
           >
-            {/* Mobile: Bottom Sheet, Desktop: Centered Modal */}
             <motion.div
               initial={{ opacity: 0, y: '100%' }}
               animate={{ opacity: 1, y: 0 }}
