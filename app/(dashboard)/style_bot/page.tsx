@@ -102,24 +102,212 @@ export default function StyleBotPage() {
   const [error, setError] = useState<string | null>(null);
   const [results, setResults] = useState<RecommendationResult | null>(null);
   const [selectedOutfit, setSelectedOutfit] = useState<string | null>(null);
+  const [selectedOutfitIndex, setSelectedOutfitIndex] = useState<number | null>(null);
   const [showDetails, setShowDetails] = useState(false);
+  const [showOutfitChat, setShowOutfitChat] = useState(false);
+  const [chatOutfitImage, setChatOutfitImage] = useState<string | null>(null);
+  const [outfitChatMessages, setOutfitChatMessages] = useState<Array<{ role: 'user' | 'assistant'; content: string }>>([]);
+  const [outfitChatInput, setOutfitChatInput] = useState('');
+  const [isOutfitChatLoading, setIsOutfitChatLoading] = useState(false);
+  const outfitChatEndRef = useRef<HTMLDivElement>(null);
+  const [outfitRequestParams, setOutfitRequestParams] = useState<{
+    occasion: string;
+    weather: string;
+    outfit_style: string;
+  } | null>(null);
+  const [userBodyFeatures, setUserBodyFeatures] = useState<{
+    gender: string | null;
+    body_type: string | null;
+    hair_type: string | null;
+    hair_color: string | null;
+    eyeball_color: string | null;
+    glasses: boolean | null;
+    skin_tone: string | null;
+  } | null>(null);
+  
+  // Unique ID generator to prevent duplicate keys
+  const generateUniqueId = useCallback(() => {
+    return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  }, []);
+
+  // Format inline markdown (bold, italic, code) - must be defined first
+  const formatInlineMarkdown = useCallback((text: string, keyPrefix: string = ''): React.ReactNode => {
+    if (!text) return text;
+    
+    const parts: React.ReactNode[] = [];
+    let currentIndex = 0;
+    
+    // Match ***bold italic*** first (longest), then **bold**, then *italic*, then `code`
+    const patterns = [
+      { regex: /\*\*\*(.+?)\*\*\*/g, component: (content: string) => <strong key={`${keyPrefix}-${currentIndex++}`}><em>{content}</em></strong> },
+      { regex: /\*\*(.+?)\*\*/g, component: (content: string) => <strong key={`${keyPrefix}-${currentIndex++}`}>{content}</strong> },
+      { regex: /`(.+?)`/g, component: (content: string) => <code key={`${keyPrefix}-${currentIndex++}`} className="bg-gray-100 dark:bg-gray-800 px-1 md:px-1.5 py-0.5 rounded text-xs md:text-sm font-mono break-all">{content}</code> },
+      { regex: /\*(.+?)\*/g, component: (content: string) => <em key={`${keyPrefix}-${currentIndex++}`}>{content}</em> },
+    ];
+    
+    let lastIndex = 0;
+    const matches: Array<{ index: number; length: number; component: React.ReactNode }> = [];
+    
+    // Find all matches
+    patterns.forEach(({ regex, component }) => {
+      let match;
+      regex.lastIndex = 0;
+      while ((match = regex.exec(text)) !== null) {
+        matches.push({
+          index: match.index,
+          length: match[0].length,
+          component: component(match[1]),
+        });
+      }
+    });
+    
+    // Sort matches by index
+    matches.sort((a, b) => a.index - b.index);
+    
+    // Remove overlapping matches (keep the first/longest)
+    const filteredMatches: typeof matches = [];
+    matches.forEach((match) => {
+      const overlaps = filteredMatches.some(
+        (existing) =>
+          (match.index >= existing.index && match.index < existing.index + existing.length) ||
+          (existing.index >= match.index && existing.index < match.index + match.length)
+      );
+      if (!overlaps) {
+        filteredMatches.push(match);
+      }
+    });
+    
+    // Build parts array
+    filteredMatches.forEach((match) => {
+      // Add text before match
+      if (match.index > lastIndex) {
+        parts.push(text.substring(lastIndex, match.index));
+      }
+      // Add formatted component
+      parts.push(match.component);
+      lastIndex = match.index + match.length;
+    });
+    
+    // Add remaining text
+    if (lastIndex < text.length) {
+      parts.push(text.substring(lastIndex));
+    }
+    
+    return parts.length > 0 ? <>{parts}</> : text;
+  }, []);
+
+  // Format markdown text to HTML
+  const formatMarkdown = useCallback((text: string): React.ReactNode => {
+    if (!text) return text;
+    
+    // Split by lines to handle headers and lists
+    const lines = text.split('\n');
+    const elements: React.ReactNode[] = [];
+    let listItems: React.ReactNode[] = [];
+    let listKey = '';
+    
+    const closeList = () => {
+      if (listItems.length > 0) {
+        elements.push(
+          <ul key={listKey} className="list-disc ml-3 md:ml-4 mb-1.5 md:mb-2 space-y-0.5 md:space-y-1">
+            {listItems}
+          </ul>
+        );
+        listItems = [];
+      }
+    };
+    
+    lines.forEach((line, index) => {
+      const trimmedLine = line.trim();
+      
+      // Headers (# ## ###)
+      if (trimmedLine.startsWith('###')) {
+        closeList();
+        const headerText = trimmedLine.replace(/^###\s+/, '');
+        elements.push(
+          <h3 key={`h3-${index}`} className="text-sm md:text-base font-bold mt-2 md:mt-3 mb-1 md:mb-1.5">
+            {formatInlineMarkdown(headerText, `h3-${index}`)}
+          </h3>
+        );
+        return;
+      } else if (trimmedLine.startsWith('##')) {
+        closeList();
+        const headerText = trimmedLine.replace(/^##\s+/, '');
+        elements.push(
+          <h2 key={`h2-${index}`} className="text-base md:text-lg font-bold mt-3 md:mt-4 mb-1.5 md:mb-2">
+            {formatInlineMarkdown(headerText, `h2-${index}`)}
+          </h2>
+        );
+        return;
+      } else if (trimmedLine.startsWith('#')) {
+        closeList();
+        const headerText = trimmedLine.replace(/^#\s+/, '');
+        elements.push(
+          <h1 key={`h1-${index}`} className="text-lg md:text-xl font-bold mt-3 md:mt-4 mb-1.5 md:mb-2">
+            {formatInlineMarkdown(headerText, `h1-${index}`)}
+          </h1>
+        );
+        return;
+      }
+      
+      // Lists (- or *)
+      if (trimmedLine.startsWith('- ') || trimmedLine.startsWith('* ')) {
+        if (listItems.length === 0) {
+          listKey = `ul-${index}`;
+        }
+        const listItemText = trimmedLine.replace(/^[-*]\s+/, '');
+        listItems.push(
+          <li key={`li-${index}`}>
+            {formatInlineMarkdown(listItemText, `li-${index}`)}
+          </li>
+        );
+        return;
+      }
+      
+      // End list if we hit a non-list line
+      if (listItems.length > 0 && trimmedLine) {
+        closeList();
+      }
+      
+      // Regular paragraph
+      if (trimmedLine) {
+        elements.push(
+          <p key={`p-${index}`} className="mb-1.5 md:mb-2 leading-relaxed break-words">
+            {formatInlineMarkdown(trimmedLine, `p-${index}`)}
+          </p>
+        );
+      } else {
+        // Empty line for spacing
+        elements.push(<br key={`br-${index}`} />);
+      }
+    });
+    
+    // Close list if still open
+    closeList();
+    
+    return <div className="markdown-content">{elements}</div>;
+  }, [formatInlineMarkdown]);
   
   // Chat and tags state
   const [tagOptions, setTagOptions] = useState<TagOptions | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [isLoadingTags, setIsLoadingTags] = useState(true);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
-  const [userMessage, setUserMessage] = useState("");
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [matchedTags, setMatchedTags] = useState<MatchedTag[]>([]);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [showTagSelection, setShowTagSelection] = useState(false);
-  const [pendingQuestions, setPendingQuestions] = useState<{category: string; options: string[]} | null>(null);
+  const [pendingQuestions, setPendingQuestions] = useState<{category: string; options: string[]; isSpecial?: boolean} | null>(null);
+  const [askingForColorPreference, setAskingForColorPreference] = useState<boolean>(false);
+  const [askingForTimeChoice, setAskingForTimeChoice] = useState<boolean>(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   // Recommendation parameters
   const [params, setParams] = useState<RecommendationParams>({
-    occasion: "casual",
-    weather: "any",
+    occasion: "None",
+    weather: "None",
     num_outfits: 3,
-    outfit_style: "casual",
+    outfit_style: "None",
     color_preference: "None",
     fit_preference: "None",
     material_preference: "None",
@@ -170,6 +358,41 @@ export default function StyleBotPage() {
     }
   }, []);
 
+  // Fetch user body features from profile
+  const fetchUserBodyFeatures = useCallback(async () => {
+    try {
+      const { data: { user }, error: authErr } = await supabase.auth.getUser();
+      if (authErr || !user) {
+        return;
+      }
+
+      const { data: profile, error: profileErr } = await supabase
+        .from("profiles")
+        .select("gender, body_type, hair_type, hair_color, eyeball_color, glasses, skin_tone")
+        .eq("id", user.id)
+        .single();
+
+      if (profileErr) {
+        console.error("Error fetching user profile:", profileErr);
+        return;
+      }
+
+      if (profile) {
+        setUserBodyFeatures({
+          gender: profile.gender,
+          body_type: profile.body_type,
+          hair_type: profile.hair_type,
+          hair_color: profile.hair_color,
+          eyeball_color: profile.eyeball_color,
+          glasses: profile.glasses,
+          skin_tone: profile.skin_tone,
+        });
+      }
+    } catch (err) {
+      console.error("Error fetching user body features:", err);
+    }
+  }, []);
+
   // Fetch tags from backend
   const fetchTags = useCallback(async () => {
     setIsLoadingTags(true);
@@ -194,6 +417,7 @@ export default function StyleBotPage() {
     if (authReady) {
       fetchWardrobe();
       fetchTags();
+      fetchUserBodyFeatures();
     }
     // Only fetch once when auth is ready, don't refetch on every render
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -204,197 +428,44 @@ export default function StyleBotPage() {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chatMessages]);
 
-  // Extract tags from user message
-  const extractTagsFromMessage = (message: string): MatchedTag[] => {
-    if (!tagOptions) return [];
-    
-    const matches: MatchedTag[] = [];
-    const lowerMessage = message.toLowerCase();
-    
-    // Check if this looks like a question (starts with question words)
-    const isQuestion = /^(what|how|when|where|why|who|which|can|could|would|should|is|are|do|does|did|will|may|might)/i.test(message.trim());
-    
-    // Check each category
-    Object.entries(tagOptions).forEach(([category, tags]) => {
-      tags.forEach((tag) => {
-        if (tag === "None" || tag === "any") return;
-        
-        const lowerTag = tag.toLowerCase();
-        const tagWords = lowerTag.split("_");
-        
-        // Check for exact match or word match
-        let confidence = 0;
-        
-        // Use word boundaries for better matching (avoid partial word matches)
-        const tagRegex = new RegExp(`\\b${lowerTag.replace(/_/g, '\\s+')}\\b`, 'i');
-        const exactMatch = tagRegex.test(lowerMessage);
-        
-        if (exactMatch) {
-          confidence = 1.0; // Exact match with word boundaries
-        } else if (lowerMessage.includes(lowerTag)) {
-          // Check if it's a standalone word (not part of another word)
-          const standaloneRegex = new RegExp(`(^|\\s)${lowerTag}(\\s|$|[^a-z])`, 'i');
-          if (standaloneRegex.test(lowerMessage)) {
-            confidence = 0.9; // Standalone word match
-          }
-        } else if (tagWords.length > 1) {
-          // For multi-word tags, check if all words are present
-          const allWordsPresent = tagWords.every(word => {
-            const wordRegex = new RegExp(`\\b${word}\\b`, 'i');
-            return wordRegex.test(lowerMessage);
-          });
-          if (allWordsPresent) {
-            confidence = 0.8; // All words present
-          }
-        } else if (tagWords.length === 1) {
-          // For single word tags, be more strict
-          const wordRegex = new RegExp(`\\b${tagWords[0]}\\b`, 'i');
-          if (wordRegex.test(lowerMessage)) {
-            confidence = 0.8; // Single word with boundary
-          }
-        }
-        
-        // If it's a question and confidence is low, reduce it further
-        if (isQuestion && confidence < 0.9) {
-          confidence = 0; // Don't match low confidence in questions
-        }
-        
-        if (confidence > 0) {
-          matches.push({
-            category,
-            tag,
-            confidence,
-          });
-        }
-      });
-    });
-    
-    // Filter out low confidence matches (only keep high confidence)
-    const highConfidenceMatches = matches.filter(m => m.confidence >= 0.8);
-    
-    // Sort by confidence and remove duplicates
-    return highConfidenceMatches
-      .sort((a, b) => b.confidence - a.confidence)
-      .filter((match, index, self) => 
-        index === self.findIndex(m => m.category === match.category && m.tag === match.tag)
-      );
-  };
+  // Keyboard navigation for modal
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!selectedOutfit || selectedOutfitIndex === null || !results?.outfitImages) return;
 
-  // Handle user message
-  const handleSendMessage = () => {
-    if (!userMessage.trim() || !tagOptions) return;
-    
-    const message = userMessage.trim();
-    
-    // Add user message to chat
-    const newUserMessage: ChatMessage = {
-      id: Date.now().toString(),
-      role: "user",
-      content: message,
-      timestamp: new Date(),
-    };
-    setChatMessages((prev) => [...prev, newUserMessage]);
-
-    
-    // Check if user is answering a pending question
-    if (pendingQuestions) {
-      const extractedTags = extractTagsFromMessage(message);
-      const relevantMatch = extractedTags.find(t => t.category === pendingQuestions.category);
-      
-      if (relevantMatch) {
-        applyTag(pendingQuestions.category, relevantMatch.tag);
-        setPendingQuestions(null);
-        setUserMessage("");
-        return;
+      if (e.key === 'Escape') {
+        setSelectedOutfit(null);
+        setSelectedOutfitIndex(null);
+      } else if (e.key === 'ArrowLeft' && selectedOutfitIndex > 0) {
+        const prevIndex = selectedOutfitIndex - 1;
+        setSelectedOutfit(results.outfitImages[prevIndex]);
+        setSelectedOutfitIndex(prevIndex);
+      } else if (e.key === 'ArrowRight' && selectedOutfitIndex < results.outfitImages.length - 1) {
+        const nextIndex = selectedOutfitIndex + 1;
+        setSelectedOutfit(results.outfitImages[nextIndex]);
+        setSelectedOutfitIndex(nextIndex);
       }
+    };
+
+    if (selectedOutfit) {
+      window.addEventListener('keydown', handleKeyDown);
+      return () => window.removeEventListener('keydown', handleKeyDown);
     }
-    
-    // Extract preferences from message
-    const extractedTags = extractTagsFromMessage(message);
-    
-    // Check if occasion is mentioned
-    const occasionMatch = extractedTags.find(t => t.category === "occasion");
-    
-    if (occasionMatch) {
-      // Apply occasion first
-      const updatedParams = {
-        ...params,
-        occasion: occasionMatch.tag,
-      };
-      setParams(updatedParams);
-      
-      // Add confirmation and ask follow-up questions
-      const botResponse: ChatMessage = {
-        id: (Date.now() + 1).toString(),
+  }, [selectedOutfit, selectedOutfitIndex, results]);
+
+  // Start conversation automatically with welcome message
+  useEffect(() => {
+    if (tagOptions && chatMessages.length === 0) {
+      const welcomeMessage: ChatMessage = {
+        id: generateUniqueId(),
         role: "bot",
-        content: `Perfect! I see you're looking for a ${formatTagLabel(occasionMatch.tag)} outfit. Let me help you find the perfect look!`,
+        content: "Hi! I'm your Style Bot 👋 Let me help you find the perfect outfit! What's the occasion?",
         timestamp: new Date(),
       };
-      setChatMessages((prev) => [...prev, botResponse]);
+      setChatMessages([welcomeMessage]);
       
-      // Ask about weather
-      setTimeout(() => {
-        const weatherQuestion: ChatMessage = {
-          id: (Date.now() + 2).toString(),
-          role: "bot",
-          content: "What's the weather like? Is it hot, cold, rainy, or something else?",
-          timestamp: new Date(),
-        };
-        setChatMessages((prev) => [...prev, weatherQuestion]);
-        setPendingQuestions({ category: "weather", options: tagOptions.weather });
-      }, 800);
-      
-      setUserMessage("");
-      return;
-    }
-    
-    if (extractedTags.length > 0) {
-      // Filter out occasion since we handle it separately
-      const otherMatches = extractedTags.filter(t => t.category !== "occasion");
-      
-      if (otherMatches.length > 0) {
-        setMatchedTags(otherMatches);
-        setShowTagSelection(true);
-        
-        // Create bot response
-        const botResponse: ChatMessage = {
-          id: (Date.now() + 1).toString(),
-          role: "bot",
-          content: `I found some preferences in your message. Which ones would you like to use?`,
-          timestamp: new Date(),
-        };
-        setChatMessages((prev) => [...prev, botResponse]);
-      } else {
-        // Only occasion was found, already handled above
-        setUserMessage("");
-        return;
-      }
-    } else {
-      // No preferences found - show occasion options
-      const isQuestion = /^(what|how|when|where|why|who|which|can|could|would|should|is|are|do|does|did|will|may|might)/i.test(message.trim());
-      
-      let botResponse: ChatMessage;
-      if (isQuestion) {
-        // User asked a question we don't understand
-        botResponse = {
-          id: (Date.now() + 1).toString(),
-          role: "bot",
-          content: "I'm not sure I understand that question. Let me help you pick an occasion for your outfit:",
-          timestamp: new Date(),
-        };
-      } else {
-        // User said something we don't recognize - show occasion options
-        botResponse = {
-          id: (Date.now() + 1).toString(),
-          role: "bot",
-          content: "I'd love to help you find the perfect outfit! What's the occasion? Please select one:",
-          timestamp: new Date(),
-        };
-      }
-      setChatMessages((prev) => [...prev, botResponse]);
-      
-      // Show occasion options from dropdown
-      if (tagOptions && tagOptions.occasion) {
+      // Show occasion options
+      if (tagOptions.occasion) {
         setMatchedTags(
           tagOptions.occasion.map(occ => ({
             category: "occasion",
@@ -403,59 +474,270 @@ export default function StyleBotPage() {
           }))
         );
         setShowTagSelection(true);
+        setPendingQuestions({ 
+          category: "occasion", 
+          options: tagOptions.occasion,
+          isSpecial: false
+        });
       }
     }
-    
-    setUserMessage("");
-  };
+  }, [tagOptions, chatMessages.length, generateUniqueId]);
+
+  // No text input - all interactions through bubbles
 
   // Reset chat to start fresh
   const resetChat = () => {
     setChatMessages([]);
-    setUserMessage("");
     setMatchedTags([]);
     setShowTagSelection(false);
     setPendingQuestions(null);
+    setAskingForColorPreference(false);
+    setAskingForTimeChoice(false);
     setResults(null);
     setError(null);
+    setOutfitRequestParams(null);
     resetParams();
   };
 
-  // Get next question category to ask
-  const getNextQuestion = (currentParams: RecommendationParams): {category: string; question: string; options: string[]} | null => {
-    if (currentParams.weather === "any") {
-      return { category: "weather", question: "What's the weather like?", options: tagOptions?.weather.filter(w => w !== "any") || [] };
+  // Initialize outfit chat with image
+  const handleOutfitChatInit = async (imageUrl: string) => {
+    setIsOutfitChatLoading(true);
+    try {
+      const response = await fetch('/api/gemini-chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          imageUrl,
+          message: '',
+          conversationHistory: [],
+          bodyFeatures: userBodyFeatures,
+          outfitRequestParams: outfitRequestParams,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to initialize chat');
+      }
+
+      const data = await response.json();
+      if (data.success) {
+        setOutfitChatMessages([
+          { role: 'assistant', content: data.message },
+        ]);
+      }
+    } catch (error) {
+      console.error('Error initializing outfit chat:', error);
+      setOutfitChatMessages([
+        { role: 'assistant', content: error instanceof Error ? `Sorry, ${error.message}` : 'Sorry, I had trouble analyzing the outfit. Please try again.' },
+      ]);
+    } finally {
+      setIsOutfitChatLoading(false);
     }
-    if (currentParams.material_preference === "None") {
-      return { category: "material_preference", question: "Any material preference? Like cotton, silk, or something else?", options: tagOptions?.material_preference.filter(m => m !== "None") || [] };
+  };
+
+  // Send message in outfit chat
+  const handleOutfitChatSend = async () => {
+    if (!outfitChatInput.trim() || isOutfitChatLoading || !chatOutfitImage) return;
+
+    const userMessage = outfitChatInput.trim();
+    setOutfitChatInput('');
+    
+    // Add user message to state immediately
+    const updatedMessages = [...outfitChatMessages, { role: 'user' as const, content: userMessage }];
+    setOutfitChatMessages(updatedMessages);
+    setIsOutfitChatLoading(true);
+
+    try {
+      // Build conversation history for Gemini (all messages except the current one we just added)
+      const conversationHistory = outfitChatMessages.map((msg) => ({
+        role: msg.role,
+        parts: msg.content,
+      }));
+
+      const response = await fetch('/api/gemini-chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          imageUrl: chatOutfitImage, // Include image URL for context
+          message: userMessage,
+          conversationHistory,
+          bodyFeatures: userBodyFeatures, // Include body features for history reconstruction
+          outfitRequestParams: outfitRequestParams, // Include outfit request params
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to send message');
+      }
+
+      const data = await response.json();
+      if (data.success) {
+        setOutfitChatMessages((prev) => [...prev, { role: 'assistant', content: data.message }]);
+      }
+    } catch (error) {
+      console.error('Error sending message:', error);
+      setOutfitChatMessages((prev) => [...prev, { 
+        role: 'assistant', 
+        content: error instanceof Error ? `Sorry, ${error.message}` : 'Sorry, I encountered an error. Please try again.' 
+      }]);
+    } finally {
+      setIsOutfitChatLoading(false);
     }
-    if (currentParams.fit_preference === "None") {
-      return { category: "fit_preference", question: "How do you like your clothes to fit? Fitted, loose, or comfortable?", options: tagOptions?.fit_preference.filter(f => f !== "None") || [] };
+  };
+
+  // Auto-scroll outfit chat
+  useEffect(() => {
+    if (outfitChatEndRef.current) {
+      outfitChatEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
-    if (currentParams.time_of_day === "None") {
-      return { category: "time_of_day", question: "What time of day is this for? Morning, afternoon, evening, or night?", options: tagOptions?.time_of_day.filter(t => t !== "None") || [] };
+  }, [outfitChatMessages]);
+
+  // Prevent body scroll when outfit chat modal is open
+  useEffect(() => {
+    if (showOutfitChat) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
     }
-    if (currentParams.season === "None") {
-      return { category: "season", question: "What season is it? Spring, summer, fall, or winter?", options: tagOptions?.season.filter(s => s !== "None") || [] };
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [showOutfitChat]);
+
+  // Auto-classify season based on weather
+  const classifySeasonFromWeather = (weather: string): string => {
+    const weatherLower = weather.toLowerCase();
+    if (weatherLower.includes("hot") || weatherLower.includes("sunny") || weatherLower.includes("warm")) {
+      return "summer";
+    } else if (weatherLower.includes("cold") || weatherLower.includes("freezing") || weatherLower.includes("snow")) {
+      return "winter";
+    } else if (weatherLower.includes("rain") || weatherLower.includes("humid")) {
+      return "spring";
+    } else if (weatherLower.includes("cool") || weatherLower.includes("mild")) {
+      return "fall";
     }
-    if (currentParams.color_preference === "None") {
-      return { category: "color_preference", question: "Any color preference? Like neutral, bold, or pastel?", options: tagOptions?.color_preference.filter(c => c !== "None") || [] };
+    // Default based on current month
+    const month = new Date().getMonth();
+    if (month >= 2 && month <= 4) return "spring";
+    if (month >= 5 && month <= 7) return "summer";
+    if (month >= 8 && month <= 10) return "fall";
+    return "winter";
+  };
+
+  // Get current time of day
+  const getCurrentTimeOfDay = (): string => {
+    const hour = new Date().getHours();
+    if (hour >= 5 && hour < 12) return "morning";
+    if (hour >= 12 && hour < 17) return "afternoon";
+    if (hour >= 17 && hour < 21) return "evening";
+    return "night";
+  };
+
+  // Get next question category to ask (new improved flow)
+  const getNextQuestion = (currentParams: RecommendationParams): {category: string; question: string; options: string[]; isSpecial?: boolean} | null => {
+    // Step 1: Check required parameters (occasion, weather, outfit_style)
+    if (currentParams.occasion === "None") {
+      return { 
+        category: "occasion", 
+        question: "What's the occasion? Please select one:", 
+        options: tagOptions?.occasion || [] 
+      };
     }
-    if (currentParams.budget === "None") {
-      return { category: "budget", question: "What's your budget range? Luxury, premium, or affordable?", options: tagOptions?.budget.filter(b => b !== "None") || [] };
+    if (currentParams.weather === "None") {
+      return { 
+        category: "weather", 
+        question: "What's the weather like? Is it hot, cold, rainy, or something else?", 
+        options: tagOptions?.weather.filter(w => w !== "any") || [] 
+      };
     }
-    if (currentParams.personal_style === "None") {
-      return { category: "personal_style", question: "What's your personal style? Classic, trendy, or bold?", options: tagOptions?.personal_style.filter(p => p !== "None") || [] };
+    if (currentParams.outfit_style === "None") {
+      return { 
+        category: "outfit_style", 
+        question: "What style are you looking for? Casual, formal, or something else?", 
+        options: tagOptions?.outfit_style || [] 
+      };
     }
+
+    // Step 2: Auto-classify season from weather (don't ask, just set it)
+    if (currentParams.season === "None" && currentParams.weather !== "None") {
+      const autoSeason = classifySeasonFromWeather(currentParams.weather);
+      // Set season automatically without asking
+      setParams(prev => ({ ...prev, season: autoSeason }));
+      // Continue to next question immediately
+      return getNextQuestion({ ...currentParams, season: autoSeason });
+    }
+
+    // Step 3: Ask about time (right now vs later)
+    if (currentParams.time_of_day === "None" && !askingForTimeChoice) {
+      setAskingForTimeChoice(true);
+      return { 
+        category: "time_choice", 
+        question: "Do you want to dress up right now, or is this for later?", 
+        options: ["right now", "later"],
+        isSpecial: true
+      };
+    }
+
+    // Step 4: If later was chosen, ask for time of day
+    if (askingForTimeChoice && currentParams.time_of_day === "None") {
+      return { 
+        category: "time_of_day", 
+        question: "What time of day is this for? Morning, afternoon, evening, or night?", 
+        options: tagOptions?.time_of_day.filter(t => t !== "None" && t !== "all_day") || [] 
+      };
+    }
+
+    // Step 5: Ask about color preference (with special question)
+    if (currentParams.color_preference === "None" && !askingForColorPreference) {
+      setAskingForColorPreference(true);
+      return { 
+        category: "color_choice", 
+        question: "Do you have any specific color in mind, or should I recommend you?", 
+        options: ["I have a color in mind", "I trust your recommendation"],
+        isSpecial: true
+      };
+    }
+
+    // Step 6: If user wants specific color, ask for color options
+    if (askingForColorPreference && currentParams.color_preference === "None") {
+      return { 
+        category: "color_preference", 
+        question: "What color preference would you like? Neutral, bold, pastel, or something else?", 
+        options: tagOptions?.color_preference.filter(c => c !== "None") || [] 
+      };
+    }
+
+    // All required questions answered, return null to trigger generation
     return null;
   };
 
   // Apply selected preference to params
   const applyTag = async (category: string, tag: string, skipGeneration = false) => {
-    const updatedParams = {
+    let updatedParams = {
       ...params,
       [category]: tag,
     };
+    
+    // Auto-classify season when weather is set
+    if (category === "weather" && updatedParams.season === "None") {
+      const autoSeason = classifySeasonFromWeather(tag);
+      updatedParams = {
+        ...updatedParams,
+        season: autoSeason,
+      };
+    }
+    
+    // Reset askingForTimeChoice when time_of_day is set
+    if (category === "time_of_day") {
+      setAskingForTimeChoice(false);
+    }
+    
     setParams(updatedParams);
     
     // Add confirmation message
@@ -487,7 +769,7 @@ export default function StyleBotPage() {
     };
     
     const botResponse: ChatMessage = {
-      id: Date.now().toString(),
+      id: generateUniqueId(),
       role: "bot",
       content: confirmationMessages[category] || `Great! I've noted your ${categoryLabel} preference.`,
       timestamp: new Date(),
@@ -508,13 +790,13 @@ export default function StyleBotPage() {
         const nextQ = getNextQuestion(updatedParams);
         if (nextQ && tagOptions) {
           const questionMsg: ChatMessage = {
-            id: (Date.now() + 1).toString(),
+            id: generateUniqueId(),
             role: "bot",
             content: nextQ.question,
             timestamp: new Date(),
           };
           setChatMessages((prev) => [...prev, questionMsg]);
-          setPendingQuestions({ category: nextQ.category, options: nextQ.options });
+          setPendingQuestions({ category: nextQ.category, options: nextQ.options, isSpecial: nextQ.isSpecial });
         } else {
           // All questions answered, generate recommendations
           generateRecommendationsFromParams(updatedParams);
@@ -527,7 +809,7 @@ export default function StyleBotPage() {
   const generateRecommendationsFromParams = async (paramsToUse: RecommendationParams) => {
     if (wardrobeItems.length < 2) {
       const warningMessage: ChatMessage = {
-        id: Date.now().toString(),
+        id: generateUniqueId(),
         role: "bot",
         content: "I need at least 2 items in your wardrobe to generate outfit recommendations. Please upload more items first.",
         timestamp: new Date(),
@@ -541,7 +823,7 @@ export default function StyleBotPage() {
     setResults(null);
 
     const loadingMessage: ChatMessage = {
-      id: Date.now().toString(),
+      id: generateUniqueId(),
       role: "bot",
       content: "Perfect! Let me create some amazing outfit recommendations for you...",
       timestamp: new Date(),
@@ -608,10 +890,16 @@ export default function StyleBotPage() {
       
       if (data.success && data.data) {
         setResults(data.data);
+        // Store the params used for this outfit generation
+        setOutfitRequestParams({
+          occasion: paramsToUse.occasion !== "None" ? paramsToUse.occasion : "",
+          weather: paramsToUse.weather !== "None" ? paramsToUse.weather : "",
+          outfit_style: paramsToUse.outfit_style !== "None" ? paramsToUse.outfit_style : "",
+        });
         
         // Add success message
         const successMessage: ChatMessage = {
-          id: (Date.now() + 1).toString(),
+          id: generateUniqueId(),
           role: "bot",
           content: `Perfect! I've created ${data.data.outfitImages?.length || 0} amazing outfit recommendation(s) for you. Check them out below!`,
           timestamp: new Date(),
@@ -627,7 +915,7 @@ export default function StyleBotPage() {
       
       // Add error message to chat
       const errorMessage: ChatMessage = {
-        id: (Date.now() + 1).toString(),
+        id: generateUniqueId(),
         role: "bot",
         content: `Sorry, I couldn't create recommendations right now: ${errorMsg}`,
         timestamp: new Date(),
@@ -764,6 +1052,12 @@ export default function StyleBotPage() {
       
       if (data.success && data.data) {
         setResults(data.data);
+        // Store the params used for this outfit generation
+        setOutfitRequestParams({
+          occasion: params.occasion !== "None" ? params.occasion : "",
+          weather: params.weather !== "None" ? params.weather : "",
+          outfit_style: params.outfit_style !== "None" ? params.outfit_style : "",
+        });
         // IMPORTANT: Do NOT refetch wardrobe after getting recommendations
         // The recommended outfits are just for display, not to be saved
         // Refetching here would cause duplicates if the backend auto-saves files
@@ -781,10 +1075,10 @@ export default function StyleBotPage() {
   // Reset parameters to defaults
   const resetParams = () => {
     setParams({
-      occasion: "casual",
-      weather: "any",
+      occasion: "None",
+      weather: "None",
       num_outfits: 3,
-      outfit_style: "casual",
+      outfit_style: "None",
       color_preference: "None",
       fit_preference: "None",
       material_preference: "None",
@@ -800,16 +1094,16 @@ export default function StyleBotPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6 px-2 md:px-0">
       {/* Header */}
       <motion.div
-        className="relative overflow-hidden bg-gradient-to-br from-purple-600 via-indigo-600 to-purple-700 rounded-2xl p-6 text-white shadow-xl shadow-purple-500/25"
+        className="relative overflow-hidden bg-gradient-to-br from-purple-600 via-indigo-600 to-purple-700 rounded-xl md:rounded-2xl p-4 md:p-6 text-white shadow-xl shadow-purple-500/25"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
         <motion.div
-          className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full blur-xl"
+          className="absolute top-0 right-0 w-16 h-16 md:w-24 md:h-24 bg-white/10 rounded-full blur-xl"
           animate={{
             scale: [1, 1.2, 1],
             rotate: [0, 180, 360],
@@ -823,7 +1117,7 @@ export default function StyleBotPage() {
         
         <div className="relative z-10 text-center">
           <motion.div
-            className="flex justify-center mb-3"
+            className="flex justify-center mb-2 md:mb-3"
             animate={{
               scale: [1, 1.1, 1],
               rotate: [0, 5, -5, 0],
@@ -834,22 +1128,22 @@ export default function StyleBotPage() {
               ease: "easeInOut",
             }}
           >
-            <Wand2 size={36} className="text-yellow-300" />
+            <Wand2 size={28} className="md:w-9 md:h-9 text-yellow-300" />
           </motion.div>
           
-          <h1 className="text-3xl font-bold mb-2">Style Bot</h1>
-          <p className="text-purple-100 text-base">
+          <h1 className="text-2xl md:text-3xl font-bold mb-1 md:mb-2">Style Bot</h1>
+          <p className="text-purple-100 text-sm md:text-base px-2">
             Get AI-powered outfit recommendations from your wardrobe
           </p>
           
           {/* Stats */}
-          <div className="flex justify-center gap-6 mt-4">
+          <div className="flex justify-center gap-4 md:gap-6 mt-3 md:mt-4">
             <div className="text-center">
-              <div className="text-xl font-bold">{wardrobeItems.length}</div>
+              <div className="text-lg md:text-xl font-bold">{wardrobeItems.length}</div>
               <div className="text-xs text-purple-200">Wardrobe Items</div>
             </div>
             <div className="text-center">
-              <div className="text-xl font-bold">{params.num_outfits}</div>
+              <div className="text-lg md:text-xl font-bold">{params.num_outfits}</div>
               <div className="text-xs text-purple-200">Outfits to Generate</div>
             </div>
           </div>
@@ -863,7 +1157,7 @@ export default function StyleBotPage() {
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="bg-red-50 border border-red-200 text-red-800 rounded-xl p-4 flex items-center gap-3"
+            className="bg-red-50 border border-red-200 text-red-800 rounded-xl p-3 md:p-4 flex items-center gap-2 md:gap-3 text-sm md:text-base"
           >
             <AlertCircle size={20} />
             <span>{error}</span>
@@ -879,131 +1173,216 @@ export default function StyleBotPage() {
 
       {/* Chat Interface */}
       <motion.div
-        className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-gray-200"
+        className="bg-white/80 backdrop-blur-sm rounded-xl md:rounded-2xl p-3 md:p-6 shadow-lg border border-gray-200"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.05 }}
       >
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <MessageSquare className="w-5 h-5 text-purple-600" />
-            <h2 className="text-xl font-bold text-gray-800">Chat with Style Bot</h2>
+        <div className="flex items-center justify-between mb-3 md:mb-4">
+          <div className="flex items-center gap-2 md:gap-3">
+            <MessageSquare className="w-4 h-4 md:w-5 md:h-5 text-purple-600" />
+            <h2 className="text-lg md:text-xl font-bold text-gray-800">Chat with Style Bot</h2>
           </div>
           <button
             onClick={resetChat}
-            className="p-2 hover:bg-purple-50 rounded-lg transition-colors text-purple-600 hover:text-purple-700"
+            className="p-1.5 md:p-2 hover:bg-purple-50 rounded-lg transition-colors text-purple-600 hover:text-purple-700"
             title="Start new conversation"
           >
-            <Plus size={20} />
+            <Plus size={18} className="md:w-5 md:h-5" />
           </button>
         </div>
         
-        {/* Chat Messages */}
-        <div className="h-64 overflow-y-auto mb-4 space-y-3 p-4 bg-gray-50 rounded-lg">
+        {/* Chat Messages - Enhanced chat-like interface */}
+        <div className="h-[400px] md:h-[500px] overflow-y-auto mb-3 md:mb-4 space-y-3 md:space-y-4 p-3 md:p-4 bg-gradient-to-b from-gray-50 to-white rounded-lg">
           {chatMessages.length === 0 ? (
-            <div className="text-center text-gray-500 py-8">
-              <Bot className="w-12 h-12 mx-auto mb-2 text-purple-400" />
-              <p>Start a conversation! Try saying:</p>
-              <p className="text-sm mt-2">&quot;I have to go to a wedding&quot;</p>
-              <p className="text-sm">&quot;The weather is summer&quot;</p>
-              <p className="text-sm">&quot;I want something casual&quot;</p>
+            <div className="text-center text-gray-500 py-8 md:py-12">
+              <Bot className="w-12 h-12 md:w-16 md:h-16 mx-auto mb-2 md:mb-3 text-purple-400" />
+              <p className="font-semibold text-gray-700 mb-1 md:mb-2 text-sm md:text-base">Hi! I&apos;m your Style Bot 👋</p>
+              <p className="text-xs md:text-sm">Let me help you find the perfect outfit!</p>
             </div>
           ) : (
             <>
-              {chatMessages.map((msg) => (
-                <motion.div
-                  key={msg.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
-                >
-                  <div
-                    className={`max-w-[80%] rounded-lg px-4 py-2 ${
-                      msg.role === "user"
-                        ? "bg-purple-600 text-white"
-                        : "bg-white text-gray-800 border border-gray-200"
-                    }`}
-                  >
-                    <p className="text-sm">{msg.content}</p>
+              {chatMessages.map((msg, index) => {
+                const showBubbles = index === chatMessages.length - 1 && pendingQuestions;
+                const isGeneratingMessage = isGenerating && msg.content.includes("create some amazing outfit recommendations");
+                return (
+                  <div key={msg.id}>
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"} mb-2`}
+                    >
+                      {msg.role === "bot" && (
+                        <div className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-purple-100 flex items-center justify-center mr-1.5 md:mr-2 flex-shrink-0">
+                          <Bot className="w-3 h-3 md:w-4 md:h-4 text-purple-600" />
+                        </div>
+                      )}
+                      <div
+                        className={`max-w-[85%] md:max-w-[75%] rounded-xl md:rounded-2xl px-3 py-2 md:px-4 md:py-3 ${
+                          msg.role === "user"
+                            ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-br-sm"
+                            : "bg-white text-gray-800 border border-gray-200 rounded-bl-sm shadow-sm"
+                        }`}
+                      >
+                        <p className="text-xs md:text-sm leading-relaxed">{msg.content}</p>
+                        {/* Loading Animation */}
+                        {isGeneratingMessage && (
+                          <div className="mt-2 md:mt-3 flex items-center gap-1.5 md:gap-2">
+                            <div className="flex gap-1 md:gap-1.5">
+                              {[0, 1, 2].map((i) => (
+                                <motion.div
+                                  key={i}
+                                  className="w-1.5 h-1.5 md:w-2 md:h-2 bg-purple-600 rounded-full"
+                                  animate={{
+                                    scale: [1, 1.3, 1],
+                                    opacity: [0.5, 1, 0.5],
+                                  }}
+                                  transition={{
+                                    duration: 1.2,
+                                    repeat: Infinity,
+                                    delay: i * 0.2,
+                                    ease: "easeInOut",
+                                  }}
+                                />
+                              ))}
+                            </div>
+                            <motion.div
+                              className="flex-1 h-0.5 md:h-1 bg-purple-100 rounded-full overflow-hidden"
+                              initial={{ width: 0 }}
+                              animate={{ width: "100%" }}
+                              transition={{ duration: 0.3 }}
+                            >
+                              <motion.div
+                                className="h-full bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-600 rounded-full"
+                                animate={{
+                                  x: ["-100%", "100%"],
+                                }}
+                                transition={{
+                                  duration: 1.5,
+                                  repeat: Infinity,
+                                  ease: "linear",
+                                }}
+                                style={{ width: "30%" }}
+                              />
+                            </motion.div>
+                            <motion.div
+                              animate={{
+                                rotate: 360,
+                              }}
+                              transition={{
+                                duration: 2,
+                                repeat: Infinity,
+                                ease: "linear",
+                              }}
+                            >
+                              <Sparkles className="w-3 h-3 md:w-4 md:h-4 text-purple-600" />
+                            </motion.div>
+                          </div>
+                        )}
+                      </div>
+                      {msg.role === "user" && (
+                        <div className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-purple-600 flex items-center justify-center ml-1.5 md:ml-2 flex-shrink-0">
+                          <User className="w-3 h-3 md:w-4 md:h-4 text-white" />
+                        </div>
+                      )}
+                    </motion.div>
+                    
+                    {/* Show bubbles right after bot message */}
+                    {showBubbles && pendingQuestions && tagOptions && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="ml-6 md:ml-10 mt-2 md:mt-3 mb-3 md:mb-4"
+                      >
+                        <div className="flex flex-wrap gap-1.5 md:gap-2">
+                          {pendingQuestions.options.map((option) => (
+                            <motion.button
+                              key={option}
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.95 }}
+                              onClick={() => {
+                                // Add user selection as a message
+                                const userSelection: ChatMessage = {
+                                  id: generateUniqueId(),
+                                  role: "user",
+                                  content: formatTagLabel(option),
+                                  timestamp: new Date(),
+                                };
+                                setChatMessages((prev) => [...prev, userSelection]);
+                                
+                                if (pendingQuestions.isSpecial) {
+                                  // Handle special questions
+                                  if (pendingQuestions.category === "time_choice") {
+                                    if (option === "right now" || option.toLowerCase().includes("now")) {
+                                      const currentTime = getCurrentTimeOfDay();
+                                      applyTag("time_of_day", currentTime, false);
+                                      setAskingForTimeChoice(false);
+                                    } else {
+                                      // "later" - will ask for time of day in getNextQuestion
+                                      setPendingQuestions(null);
+                                      setTimeout(() => {
+                                        const nextQ = getNextQuestion(params);
+                                        if (nextQ && tagOptions) {
+                                          const questionMsg: ChatMessage = {
+                                            id: (Date.now() + 1).toString(),
+                                            role: "bot",
+                                            content: nextQ.question,
+                                            timestamp: new Date(),
+                                          };
+                                          setChatMessages((prev) => [...prev, questionMsg]);
+                                          setPendingQuestions({ category: nextQ.category, options: nextQ.options, isSpecial: nextQ.isSpecial });
+                                        }
+                                      }, 800);
+                                    }
+                                  } else if (pendingQuestions.category === "color_choice") {
+                                    if (option.toLowerCase().includes("trust") || option.toLowerCase().includes("recommend")) {
+                                      // Don't set color preference
+                                      setAskingForColorPreference(false);
+                                      setPendingQuestions(null);
+                                      setTimeout(() => {
+                                        generateRecommendationsFromParams(params);
+                                      }, 800);
+                                    } else {
+                                      // Will ask for color preference
+                                      setPendingQuestions(null);
+                                      setTimeout(() => {
+                                        const nextQ = getNextQuestion(params);
+                                        if (nextQ && tagOptions) {
+                                          const questionMsg: ChatMessage = {
+                                            id: (Date.now() + 1).toString(),
+                                            role: "bot",
+                                            content: nextQ.question,
+                                            timestamp: new Date(),
+                                          };
+                                          setChatMessages((prev) => [...prev, questionMsg]);
+                                          setPendingQuestions({ category: nextQ.category, options: nextQ.options, isSpecial: nextQ.isSpecial });
+                                        }
+                                      }, 800);
+                                    }
+                                  }
+                                } else {
+                                  applyTag(pendingQuestions.category, option);
+                                  setPendingQuestions(null);
+                                }
+                              }}
+                              className={`px-3 py-1.5 md:px-4 md:py-2.5 rounded-full font-medium text-xs md:text-sm transition-all duration-200 ${
+                                pendingQuestions.isSpecial
+                                  ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white hover:from-purple-700 hover:to-indigo-700 shadow-md hover:shadow-lg"
+                                  : "bg-purple-100 text-purple-700 hover:bg-purple-200 border border-purple-300"
+                              }`}
+                            >
+                              {formatTagLabel(option)}
+                            </motion.button>
+                          ))}
+                        </div>
+                      </motion.div>
+                    )}
                   </div>
-                </motion.div>
-              ))}
+                );
+              })}
               <div ref={chatEndRef} />
             </>
           )}
-        </div>
-
-        {/* Matched Preferences Selection */}
-        {showTagSelection && matchedTags.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            className="mb-4 p-4 bg-purple-50 rounded-lg border border-purple-200"
-          >
-            <p className="text-sm font-medium text-purple-800 mb-2">I found these preferences:</p>
-            <div className="flex flex-wrap gap-2">
-              {matchedTags.map((matched, index) => (
-                <button
-                  key={`${matched.category}-${matched.tag}-${index}`}
-                  onClick={() => applyTag(matched.category, matched.tag)}
-                  className="px-3 py-1 bg-purple-600 text-white rounded-full text-xs hover:bg-purple-700 transition-colors"
-                >
-                  {formatTagLabel(matched.category)}: {formatTagLabel(matched.tag)}
-                </button>
-              ))}
-            </div>
-          </motion.div>
-        )}
-
-        {/* Pending Question Options */}
-        {pendingQuestions && tagOptions && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            className="mb-4 p-4 bg-blue-50 rounded-lg border border-blue-200"
-          >
-            <p className="text-sm font-medium text-blue-800 mb-2">Quick options:</p>
-            <div className="flex flex-wrap gap-2">
-              {pendingQuestions.options.map((option) => (
-                <button
-                  key={option}
-                  onClick={() => {
-                    applyTag(pendingQuestions.category, option);
-                    setPendingQuestions(null);
-                  }}
-                  className="px-3 py-1 bg-blue-600 text-white rounded-full text-xs hover:bg-blue-700 transition-colors"
-                >
-                  {formatTagLabel(option)}
-                </button>
-              ))}
-            </div>
-          </motion.div>
-        )}
-
-        {/* Message Input */}
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={userMessage}
-            onChange={(e) => setUserMessage(e.target.value)}
-            onKeyPress={(e) => {
-              if (e.key === "Enter") {
-                handleSendMessage();
-              }
-            }}
-            placeholder="Type your message... (e.g., 'I have to go to a wedding')"
-            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-            disabled={!tagOptions || isLoadingTags}
-          />
-          <button
-            onClick={handleSendMessage}
-            disabled={!userMessage.trim() || !tagOptions || isLoadingTags}
-            className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-          >
-            <Send size={18} />
-          </button>
         </div>
       </motion.div>
 
@@ -1031,7 +1410,7 @@ export default function StyleBotPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {/* Occasion */}
-          <div>
+    <div>
             <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
               <Calendar size={14} />
               Occasion
@@ -1286,18 +1665,18 @@ export default function StyleBotPage() {
                     <span className="inline-block w-2 h-2 rounded-full bg-green-500" />
                     {includesShop ? 'Includes Shop Your Style items' : 'From your wardrobe'}
                   </span>
-                </div>
-              );
+    </div>
+  );
             })()}
             {/* Results Header */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <CheckCircle className="w-6 h-6 text-green-600" />
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div className="flex items-center gap-2 md:gap-3">
+                <CheckCircle className="w-5 h-5 md:w-6 md:h-6 text-green-600 flex-shrink-0" />
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-800">
+                  <h2 className="text-xl md:text-2xl font-bold text-gray-800">
                     Recommended Outfits ({results.outfitImages.length})
                   </h2>
-                  <p className="text-sm text-gray-500 mt-1">
+                  <p className="text-xs md:text-sm text-gray-500 mt-1">
                     These are AI-generated outfit combinations from your wardrobe
                   </p>
                 </div>
@@ -1305,7 +1684,7 @@ export default function StyleBotPage() {
               {results.outfitDetails && (
                 <button
                   onClick={() => setShowDetails(!showDetails)}
-                  className="text-sm text-purple-600 hover:text-purple-700 flex items-center gap-1"
+                  className="text-xs md:text-sm text-purple-600 hover:text-purple-700 flex items-center gap-1 self-start sm:self-auto"
                 >
                   {showDetails ? "Hide" : "Show"} Details
                 </button>
@@ -1326,80 +1705,111 @@ export default function StyleBotPage() {
               </motion.div>
             )}
 
-            {/* Outfit Images Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Outfit Images Grid - Optimized for horizontal images */}
+            <div className="grid grid-cols-1 gap-6 md:gap-8">
               {results.outfitImages.map((imageUrl, index) => (
                 <motion.div
                   key={index}
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: index * 0.1 }}
-                  className="relative bg-white rounded-2xl overflow-hidden shadow-lg border border-gray-200 group"
+                  className="relative bg-white rounded-xl md:rounded-2xl overflow-hidden shadow-lg border border-gray-200 group"
                 >
                   <div
-                    className="relative w-full h-64 cursor-pointer"
-                    onClick={() => setSelectedOutfit(imageUrl)}
+                    className="relative w-full h-[300px] sm:h-[400px] md:h-[500px] cursor-pointer overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl"
+                    onClick={() => {
+                      setSelectedOutfit(imageUrl);
+                      setSelectedOutfitIndex(index);
+                    }}
                   >
                     <Image
                       src={imageUrl}
                       alt={`Recommended outfit ${index + 1}`}
                       fill
-                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                      className="object-cover transition-transform duration-300 group-hover:scale-105"
+                      sizes="100vw"
+                      className="object-contain transition-transform duration-300 group-hover:scale-[1.02]"
                       unoptimized
                     />
                     {/* Source badge overlay */}
-                    <div className="absolute top-3 left-3">
+                    <div className="absolute top-2 left-2 md:top-3 md:left-3">
                       {(() => {
                         const includesShop = !!(results?.outfitDetails &&
                           typeof results.outfitDetails === 'object' &&
                           JSON.stringify(results.outfitDetails).toLowerCase().includes('shop'));
                         return (
-                          <span className={`text-[10px] md:text-xs px-2 py-1 rounded-full shadow 
+                          <span className={`text-[9px] md:text-xs px-1.5 py-0.5 md:px-2 md:py-1 rounded-full shadow 
                             ${includesShop ? 'bg-indigo-600 text-white' : 'bg-emerald-600 text-white'}`}>
                             {includesShop ? 'Shop Your Style' : 'Your Wardrobe'}
                           </span>
                         );
                       })()}
                     </div>
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                    <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                      <div className="bg-white/90 backdrop-blur-sm rounded-full p-2">
-                        <ZoomIn className="w-4 h-4 text-gray-700" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 md:group-hover:opacity-100 transition-opacity duration-300" />
+                    <div className="absolute top-2 right-2 md:top-3 md:right-3 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300">
+                      <div className="bg-white/90 backdrop-blur-sm rounded-full p-1.5 md:p-2">
+                        <ZoomIn className="w-3 h-3 md:w-4 md:h-4 text-gray-700" />
                       </div>
                     </div>
-                    <div className="absolute bottom-3 left-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                      <div className="bg-white/90 backdrop-blur-sm rounded-full px-3 py-1">
-                        <span className="text-sm font-medium text-gray-800">
+                    <div className="absolute bottom-2 left-2 md:bottom-3 md:left-3 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300">
+                      <div className="bg-white/90 backdrop-blur-sm rounded-full px-2 py-0.5 md:px-3 md:py-1">
+                        <span className="text-xs md:text-sm font-medium text-gray-800">
                           Outfit {index + 1}
                         </span>
                       </div>
                     </div>
                   </div>
-                  <div className="p-4 flex items-center justify-between">
-                    <span className="text-sm font-medium text-gray-600">
-                      Outfit {index + 1}
-                    </span>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => {
-                          const link = document.createElement("a");
-                          link.href = imageUrl;
-                          link.download = `outfit-${index + 1}.jpg`;
-                          link.click();
-                        }}
-                        className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                        title="Download"
-                      >
-                        <Download size={16} className="text-gray-600" />
-                      </button>
-                      <button
-                        onClick={() => setSelectedOutfit(imageUrl)}
-                        className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                        title="View Full Size"
-                      >
-                        <ZoomIn size={16} className="text-gray-600" />
-                      </button>
+                  <div className="p-4 md:p-6 bg-white border-t border-gray-100">
+                    <div className="flex items-center justify-between mb-3">
+                      <div>
+                        <h4 className="text-base md:text-lg font-bold text-gray-800 mb-1">
+                          Outfit {index + 1}
+                        </h4>
+                        <p className="text-xs md:text-sm text-gray-500">
+                          Click to view full size and zoom
+                        </p>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setChatOutfitImage(imageUrl);
+                            setShowOutfitChat(true);
+                            setOutfitChatMessages([]);
+                            setOutfitChatInput('');
+                            // Initialize chat with image
+                            handleOutfitChatInit(imageUrl);
+                          }}
+                          className="p-2 md:p-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg transition-all hover:shadow-lg flex items-center gap-1.5 text-xs md:text-sm"
+                          title="Talk about this outfit"
+                        >
+                          <MessageSquare size={14} className="md:w-4 md:h-4" />
+                          <span className="hidden sm:inline">Talk</span>
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const link = document.createElement("a");
+                            link.href = imageUrl;
+                            link.download = `outfit-${index + 1}.jpg`;
+                            link.click();
+                          }}
+                          className="p-2 md:p-2.5 hover:bg-purple-50 rounded-lg transition-colors border border-gray-200 hover:border-purple-300"
+                          title="Download"
+                        >
+                          <Download size={16} className="md:w-5 md:h-5 text-gray-700" />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedOutfit(imageUrl);
+                            setSelectedOutfitIndex(index);
+                          }}
+                          className="p-2 md:p-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg transition-all hover:shadow-lg"
+                          title="View Full Size"
+                        >
+                          <ZoomIn size={16} className="md:w-5 md:h-5" />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </motion.div>
@@ -1409,76 +1819,316 @@ export default function StyleBotPage() {
         )}
       </AnimatePresence>
 
-      {/* Full Size Image Modal */}
+      {/* Full Size Image Modal - Mobile Optimized with Dynamic Height */}
       <AnimatePresence>
-        {selectedOutfit && (
+        {selectedOutfit && results && results.outfitImages && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-50 p-4"
-            onClick={() => setSelectedOutfit(null)}
+            className="fixed inset-0 bg-black/95 z-50 flex items-center justify-center p-0 sm:p-4"
+            onClick={() => {
+              setSelectedOutfit(null);
+              setSelectedOutfitIndex(null);
+            }}
           >
             <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="relative bg-white rounded-2xl w-full max-w-4xl max-h-[95vh] overflow-hidden shadow-2xl"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="relative bg-white w-full max-w-full sm:max-w-[90vw] max-h-[95vh] sm:rounded-2xl overflow-hidden shadow-2xl flex flex-col"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="flex justify-between items-center p-4 border-b border-gray-200 bg-gradient-to-r from-purple-50 to-indigo-50">
-                <h3 className="text-lg font-semibold text-gray-800">Outfit Preview</h3>
+              {/* Compact Header */}
+              <div className="flex justify-between items-center px-3 py-2 border-b border-gray-200 bg-gradient-to-r from-purple-50 to-indigo-50 flex-shrink-0">
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                  <h3 className="text-sm font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent truncate">
+                    Outfit {selectedOutfitIndex !== null ? selectedOutfitIndex + 1 : ''}
+                  </h3>
+                  {results.outfitImages.length > 1 && (
+                    <span className="text-xs text-gray-500 flex-shrink-0">
+                      {selectedOutfitIndex !== null ? selectedOutfitIndex + 1 : ''} / {results.outfitImages.length}
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-1 flex-shrink-0">
+                  <button
+                    onClick={() => {
+                      setSelectedOutfit(null);
+                      setSelectedOutfitIndex(null);
+                    }}
+                    className="p-1.5 hover:bg-white rounded-full transition-colors"
+                  >
+                    <X size={18} className="text-gray-600" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Image Container */}
+              <div 
+                className="relative overflow-hidden bg-gray-900 flex items-center justify-center"
+                style={{ 
+                  height: 'calc(95vh - 100px)',
+                  minHeight: '300px'
+                }}
+              >
+                <div className="relative w-full h-full">
+                  <Image
+                    src={selectedOutfit || ''}
+                    alt="Full size outfit"
+                    fill
+                    className="object-contain"
+                    sizes="100vw"
+                    unoptimized
+                  />
+                </div>
+
+                {/* Navigation Arrows */}
+                {results.outfitImages.length > 1 && selectedOutfitIndex !== null && (
+                  <>
+                    {selectedOutfitIndex > 0 && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const prevIndex = selectedOutfitIndex - 1;
+                          setSelectedOutfit(results.outfitImages[prevIndex]);
+                          setSelectedOutfitIndex(prevIndex);
+                        }}
+                        className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/90 backdrop-blur-sm rounded-full p-2 shadow-lg hover:bg-white transition-colors z-10"
+                      >
+                        <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                        </svg>
+                      </button>
+                    )}
+                    {selectedOutfitIndex < results.outfitImages.length - 1 && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const nextIndex = selectedOutfitIndex + 1;
+                          setSelectedOutfit(results.outfitImages[nextIndex]);
+                          setSelectedOutfitIndex(nextIndex);
+                        }}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/90 backdrop-blur-sm rounded-full p-2 shadow-lg hover:bg-white transition-colors z-10"
+                      >
+                        <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </button>
+                    )}
+                  </>
+                )}
+              </div>
+
+              {/* Compact Footer */}
+              <div className="flex justify-between items-center gap-2 px-3 py-2 border-t border-gray-200 bg-gradient-to-r from-purple-50 to-indigo-50 flex-shrink-0">
+                <div className="flex items-center gap-1.5 text-xs text-gray-600">
+                  <Sparkles className="w-3 h-3 text-purple-600" />
+                  <span className="hidden sm:inline">AI Generated</span>
+                </div>
+                <div className="flex gap-2">
+                  <motion.button
+                    whileTap={{ scale: 0.95 }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const link = document.createElement("a");
+                      link.href = selectedOutfit;
+                      link.download = `outfit-${selectedOutfitIndex !== null ? selectedOutfitIndex + 1 : '1'}.jpg`;
+                      link.click();
+                    }}
+                    className="flex items-center gap-1.5 bg-gradient-to-r from-purple-500 to-indigo-500 text-white px-3 py-2 rounded-lg text-xs font-semibold"
+                  >
+                    <Download size={14} />
+                    <span>Download</span>
+                  </motion.button>
+                  <motion.button
+                    whileTap={{ scale: 0.95 }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (navigator.share) {
+                        navigator.share({
+                          title: "Check out this outfit recommendation!",
+                          url: selectedOutfit,
+                        });
+                      } else {
+                        navigator.clipboard.writeText(selectedOutfit);
+                        alert("Image URL copied to clipboard!");
+                      }
+                    }}
+                    className="flex items-center gap-1.5 bg-white border border-gray-200 text-gray-700 px-3 py-2 rounded-lg text-xs font-semibold"
+                  >
+                    <Share2 size={14} />
+                    <span>Share</span>
+                  </motion.button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Outfit Chat Modal - Mobile Optimized */}
+      <AnimatePresence>
+        {showOutfitChat && chatOutfitImage && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/60 z-[60] flex items-end sm:items-center justify-center"
+            style={{ touchAction: 'none' }}
+            onClick={() => {
+              setShowOutfitChat(false);
+              setChatOutfitImage(null);
+              setOutfitChatMessages([]);
+              setOutfitChatInput('');
+            }}
+          >
+            {/* Mobile: Bottom Sheet, Desktop: Centered Modal */}
+            <motion.div
+              initial={{ opacity: 0, y: '100%' }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: '100%' }}
+              transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+              className="bg-white w-full sm:w-auto sm:max-w-3xl h-[75vh] sm:h-[600px] sm:rounded-2xl rounded-t-3xl shadow-2xl flex flex-col overflow-hidden"
+              style={{ maxHeight: '75vh' }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-gradient-to-r from-purple-600 to-indigo-600 flex-shrink-0">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
+                    <Bot className="w-4 h-4 text-white" />
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="text-white font-semibold text-sm truncate">Outfit Chat</h3>
+                    <p className="text-white/80 text-xs truncate">Ask me anything!</p>
+                  </div>
+                </div>
                 <button
-                  onClick={() => setSelectedOutfit(null)}
-                  className="p-2 hover:bg-white rounded-full transition-colors"
+                  onClick={() => {
+                    setShowOutfitChat(false);
+                    setChatOutfitImage(null);
+                    setOutfitChatMessages([]);
+                    setOutfitChatInput('');
+                  }}
+                  className="p-1.5 hover:bg-white/20 rounded-lg transition-colors flex-shrink-0"
                 >
-                  <X size={20} className="text-gray-600" />
+                  <X size={18} className="text-white" />
                 </button>
               </div>
-              <div className="relative w-full h-[80vh] flex items-center justify-center bg-gray-50">
-                <Image
-                  src={selectedOutfit}
-                  alt="Full size outfit"
-                  fill
-                  sizes="100vw"
-                  className="object-contain"
-                  unoptimized
-                />
-              </div>
-              <div className="flex justify-center gap-3 p-4 bg-gradient-to-r from-purple-50 to-indigo-50">
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => {
-                    const link = document.createElement("a");
-                    link.href = selectedOutfit;
-                    link.download = "outfit.jpg";
-                    link.click();
-                  }}
-                  className="flex items-center gap-2 bg-gradient-to-r from-purple-500 to-indigo-500 text-white px-4 py-2 rounded-lg font-semibold hover:shadow-lg transition-all duration-200"
-                >
-                  <Download size={18} />
-                  Download
-                </motion.button>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => {
-                    if (navigator.share) {
-                      navigator.share({
-                        title: "Check out this outfit recommendation!",
-                        url: selectedOutfit,
-                      });
-                    } else {
-                      navigator.clipboard.writeText(selectedOutfit);
-                      alert("Image URL copied to clipboard!");
-                    }
-                  }}
-                  className="flex items-center gap-2 bg-white/80 backdrop-blur-sm border border-gray-200 text-gray-700 px-4 py-2 rounded-lg font-semibold hover:bg-white transition-all duration-200"
-                >
-                  <Share2 size={18} />
-                  Share
-                </motion.button>
+
+              {/* Content Area */}
+              <div className="flex flex-col sm:flex-row flex-1 overflow-hidden">
+                {/* Image Section */}
+                <div className="h-28 sm:h-auto sm:w-1/3 border-b sm:border-b-0 sm:border-r border-gray-200 bg-gray-50 p-2 flex items-center justify-center flex-shrink-0">
+                  <div className="relative w-full h-full rounded-lg overflow-hidden bg-white">
+                    <Image
+                      src={chatOutfitImage}
+                      alt="Selected outfit"
+                      fill
+                      className="object-contain"
+                      sizes="(max-width: 640px) 100vw, 400px"
+                    />
+                  </div>
+                </div>
+
+                {/* Chat Section */}
+                <div className="flex-1 flex flex-col overflow-hidden">
+                  {/* Messages Area - Scrollable */}
+                  <div 
+                    className="flex-1 overflow-y-auto p-3 space-y-2 bg-gray-50"
+                    style={{ 
+                      overscrollBehavior: 'contain',
+                      WebkitOverflowScrolling: 'touch'
+                    }}
+                  >
+                    {outfitChatMessages.length === 0 && !isOutfitChatLoading && (
+                      <div className="flex items-center justify-center h-full text-gray-400">
+                        <div className="text-center">
+                          <Bot className="w-10 h-10 mx-auto mb-2 opacity-50" />
+                          <p className="text-xs">Analyzing outfit...</p>
+                        </div>
+                      </div>
+                    )}
+                    {outfitChatMessages.map((msg, index) => (
+                      <motion.div
+                        key={index}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                      >
+                        <div
+                          className={`max-w-[85%] rounded-2xl px-3 py-2 ${
+                            msg.role === 'user'
+                              ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white'
+                              : 'bg-white text-gray-800 border border-gray-200'
+                          }`}
+                        >
+                          {msg.role === 'assistant' && (
+                            <div className="flex items-center gap-1.5 mb-1">
+                              <Bot className="w-3 h-3 text-purple-600" />
+                              <span className="text-[10px] font-semibold text-purple-600">AI</span>
+                            </div>
+                          )}
+                          <div className="text-xs leading-relaxed">
+                            {msg.role === 'assistant' ? formatMarkdown(msg.content) : <p className="whitespace-pre-wrap break-words">{msg.content}</p>}
+                          </div>
+                        </div>
+                      </motion.div>
+                    ))}
+                    {isOutfitChatLoading && (
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="flex justify-start"
+                      >
+                        <div className="bg-white rounded-2xl px-3 py-2 border border-gray-200">
+                          <div className="flex items-center gap-2">
+                            <Bot className="w-3 h-3 text-purple-600" />
+                            <div className="flex gap-1">
+                              <div className="w-1.5 h-1.5 bg-purple-600 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                              <div className="w-1.5 h-1.5 bg-purple-600 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                              <div className="w-1.5 h-1.5 bg-purple-600 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                            </div>
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                    <div ref={outfitChatEndRef} />
+                  </div>
+
+                  {/* Input Area - Fixed at Bottom */}
+                  <div className="p-3 border-t border-gray-200 bg-white flex-shrink-0">
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={outfitChatInput}
+                        onChange={(e) => setOutfitChatInput(e.target.value)}
+                        onKeyPress={(e) => {
+                          if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault();
+                            handleOutfitChatSend();
+                          }
+                        }}
+                        placeholder="Ask about this outfit..."
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
+                        disabled={isOutfitChatLoading}
+                      />
+                      <button
+                        onClick={handleOutfitChatSend}
+                        disabled={!outfitChatInput.trim() || isOutfitChatLoading}
+                        className="px-3 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center flex-shrink-0"
+                      >
+                        {isOutfitChatLoading ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Send className="w-4 h-4" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
             </motion.div>
           </motion.div>
