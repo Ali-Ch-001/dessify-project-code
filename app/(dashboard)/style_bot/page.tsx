@@ -31,6 +31,7 @@ import {
   Send,
   Bot,
   Plus,
+  Heart,
 } from "lucide-react";
 
 type WardrobeItem = {
@@ -110,6 +111,8 @@ export default function StyleBotPage() {
   const [outfitChatInput, setOutfitChatInput] = useState('');
   const [isOutfitChatLoading, setIsOutfitChatLoading] = useState(false);
   const outfitChatEndRef = useRef<HTMLDivElement>(null);
+  const [savingOutfitIndex, setSavingOutfitIndex] = useState<number | null>(null);
+  const [savedOutfits, setSavedOutfits] = useState<Set<string>>(new Set());
   const [outfitRequestParams, setOutfitRequestParams] = useState<{
     occasion: string;
     weather: string;
@@ -1089,6 +1092,70 @@ export default function StyleBotPage() {
     });
   };
 
+  // Save outfit to styled looks
+  const saveToStyledLooks = async (imageUrl: string, index: number) => {
+    setSavingOutfitIndex(index);
+    try {
+      // Get the session token
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !session) {
+        throw new Error('Please log in to save outfits');
+      }
+
+      const response = await fetch('/api/save-styled-look', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          imageUrl,
+          params: {
+            occasion: params.occasion !== "None" ? params.occasion : null,
+            weather: params.weather !== "None" ? params.weather : null,
+            outfit_style: params.outfit_style !== "None" ? params.outfit_style : null,
+            color_preference: params.color_preference !== "None" ? params.color_preference : null,
+            fit_preference: params.fit_preference !== "None" ? params.fit_preference : null,
+            material_preference: params.material_preference !== "None" ? params.material_preference : null,
+            season: params.season !== "None" ? params.season : null,
+            time_of_day: params.time_of_day !== "None" ? params.time_of_day : null,
+            budget: params.budget !== "None" ? params.budget : null,
+            personal_style: params.personal_style !== "None" ? params.personal_style : null,
+          },
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to save outfit');
+      }
+
+      const data = await response.json();
+      if (data.success) {
+        setSavedOutfits(prev => new Set(prev).add(imageUrl));
+        // Show success message
+        const successMessage: ChatMessage = {
+          id: generateUniqueId(),
+          role: "bot",
+          content: "Great! I've saved this outfit to your Styled Looks! 💖",
+          timestamp: new Date(),
+        };
+        setChatMessages((prev) => [...prev, successMessage]);
+      }
+    } catch (error) {
+      console.error('Error saving outfit:', error);
+      const errorMessage: ChatMessage = {
+        id: generateUniqueId(),
+        role: "bot",
+        content: `Sorry, I couldn't save this outfit: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        timestamp: new Date(),
+      };
+      setChatMessages((prev) => [...prev, errorMessage]);
+    } finally {
+      setSavingOutfitIndex(null);
+    }
+  };
+
   if (!authReady) {
     return null;
   }
@@ -1716,10 +1783,13 @@ export default function StyleBotPage() {
                   className="relative bg-white rounded-xl md:rounded-2xl overflow-hidden shadow-lg border border-gray-200 group"
                 >
                   <div
-                    className="relative w-full h-[300px] sm:h-[400px] md:h-[500px] cursor-pointer overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl"
+                    className="relative w-full h-[300px] sm:h-[400px] md:h-[500px] overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl sm:cursor-pointer"
                     onClick={() => {
-                      setSelectedOutfit(imageUrl);
-                      setSelectedOutfitIndex(index);
+                      // Only open popup on desktop
+                      if (window.innerWidth >= 640) {
+                        setSelectedOutfit(imageUrl);
+                        setSelectedOutfitIndex(index);
+                      }
                     }}
                   >
                     <Image
@@ -1765,27 +1835,86 @@ export default function StyleBotPage() {
                           Outfit {index + 1}
                         </h4>
                         <p className="text-xs md:text-sm text-gray-500">
-                          Click to view full size and zoom
+                          Click to view full size
                         </p>
                       </div>
-                      <div className="flex gap-2">
-                        <button
+                      <div className="flex flex-wrap gap-2">
+                        {/* Save to Styled Looks Button */}
+                        <motion.button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            saveToStyledLooks(imageUrl, index);
+                          }}
+                          disabled={savingOutfitIndex === index || savedOutfits.has(imageUrl)}
+                          whileHover={savingOutfitIndex !== index && !savedOutfits.has(imageUrl) ? { scale: 1.05, y: -2 } : {}}
+                          whileTap={savingOutfitIndex !== index && !savedOutfits.has(imageUrl) ? { scale: 0.95 } : {}}
+                          className={`relative px-3 py-2.5 md:px-4 md:py-3 rounded-xl transition-all flex items-center gap-2 text-xs md:text-sm font-medium overflow-hidden ${
+                            savedOutfits.has(imageUrl)
+                              ? 'bg-pink-100 text-pink-700 border-2 border-pink-300 cursor-not-allowed shadow-sm'
+                              : savingOutfitIndex === index
+                              ? 'bg-gray-100 text-gray-500 cursor-not-allowed'
+                              : 'bg-gradient-to-r from-pink-500 via-rose-500 to-pink-600 text-white shadow-md hover:shadow-xl'
+                          }`}
+                          title={savedOutfits.has(imageUrl) ? "Already saved to Styled Looks" : "Add to Styled Looks"}
+                        >
+                          {!savedOutfits.has(imageUrl) && savingOutfitIndex !== index && (
+                            <motion.div
+                              className="absolute inset-0 bg-gradient-to-r from-pink-400 to-rose-400 opacity-0 hover:opacity-100"
+                              transition={{ duration: 0.3 }}
+                            />
+                          )}
+                          <div className="relative z-10 flex items-center gap-2">
+                            {savingOutfitIndex === index ? (
+                              <Loader2 size={16} className="md:w-5 md:h-5 animate-spin" />
+                            ) : (
+                              <motion.div
+                                animate={savedOutfits.has(imageUrl) ? { scale: [1, 1.2, 1] } : {}}
+                                transition={{ duration: 0.3 }}
+                              >
+                                <Heart 
+                                  size={16} 
+                                  className={`md:w-5 md:h-5 ${savedOutfits.has(imageUrl) ? 'fill-pink-600' : ''}`} 
+                                />
+                              </motion.div>
+                            )}
+                            <span className="hidden sm:inline whitespace-nowrap">
+                              {savingOutfitIndex === index ? 'Saving...' : savedOutfits.has(imageUrl) ? 'Saved' : 'Save'}
+                            </span>
+                          </div>
+                        </motion.button>
+
+                        {/* Talk Button */}
+                        <motion.button
                           onClick={(e) => {
                             e.stopPropagation();
                             setChatOutfitImage(imageUrl);
                             setShowOutfitChat(true);
                             setOutfitChatMessages([]);
                             setOutfitChatInput('');
-                            // Initialize chat with image
                             handleOutfitChatInit(imageUrl);
                           }}
-                          className="p-2 md:p-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg transition-all hover:shadow-lg flex items-center gap-1.5 text-xs md:text-sm"
+                          whileHover={{ scale: 1.05, y: -2 }}
+                          whileTap={{ scale: 0.95 }}
+                          className="relative px-3 py-2.5 md:px-4 md:py-3 bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 text-white rounded-xl shadow-md hover:shadow-xl transition-all flex items-center gap-2 text-xs md:text-sm font-medium overflow-hidden group"
                           title="Talk about this outfit"
                         >
-                          <MessageSquare size={14} className="md:w-4 md:h-4" />
-                          <span className="hidden sm:inline">Talk</span>
-                        </button>
-                        <button
+                          <motion.div
+                            className="absolute inset-0 bg-gradient-to-r from-indigo-500 to-purple-500 opacity-0 group-hover:opacity-100"
+                            transition={{ duration: 0.3 }}
+                          />
+                          <div className="relative z-10 flex items-center gap-2">
+                            <motion.div
+                              animate={{ rotate: [0, 10, -10, 0] }}
+                              transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+                            >
+                              <MessageSquare size={16} className="md:w-5 md:h-5" />
+                            </motion.div>
+                            <span className="hidden sm:inline whitespace-nowrap">Talk</span>
+                          </div>
+                        </motion.button>
+
+                        {/* Download Button */}
+                        <motion.button
                           onClick={(e) => {
                             e.stopPropagation();
                             const link = document.createElement("a");
@@ -1793,22 +1922,44 @@ export default function StyleBotPage() {
                             link.download = `outfit-${index + 1}.jpg`;
                             link.click();
                           }}
-                          className="p-2 md:p-2.5 hover:bg-purple-50 rounded-lg transition-colors border border-gray-200 hover:border-purple-300"
+                          whileHover={{ scale: 1.05, y: -2 }}
+                          whileTap={{ scale: 0.95 }}
+                          className="px-3 py-2.5 md:px-4 md:py-3 bg-white hover:bg-purple-50 rounded-xl transition-all border-2 border-gray-200 hover:border-purple-400 shadow-sm hover:shadow-md flex items-center justify-center text-xs md:text-sm font-medium"
                           title="Download"
                         >
-                          <Download size={16} className="md:w-5 md:h-5 text-gray-700" />
-                        </button>
-                        <button
+                          <motion.div
+                            animate={{ y: [0, -2, 0] }}
+                            transition={{ duration: 1.5, repeat: Infinity, repeatDelay: 2 }}
+                          >
+                            <Download size={16} className="md:w-5 md:h-5 text-gray-700" />
+                          </motion.div>
+                        </motion.button>
+
+                        {/* View Full Size Button - Hidden on mobile */}
+                        <motion.button
                           onClick={(e) => {
                             e.stopPropagation();
                             setSelectedOutfit(imageUrl);
                             setSelectedOutfitIndex(index);
                           }}
-                          className="p-2 md:p-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg transition-all hover:shadow-lg"
+                          whileHover={{ scale: 1.05, y: -2 }}
+                          whileTap={{ scale: 0.95 }}
+                          className="hidden md:flex relative px-3 py-2.5 md:px-4 md:py-3 bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 text-white rounded-xl shadow-md hover:shadow-xl transition-all items-center justify-center text-xs md:text-sm font-medium overflow-hidden group"
                           title="View Full Size"
                         >
-                          <ZoomIn size={16} className="md:w-5 md:h-5" />
-                        </button>
+                          <motion.div
+                            className="absolute inset-0 bg-gradient-to-r from-purple-500 to-indigo-500 opacity-0 group-hover:opacity-100"
+                            transition={{ duration: 0.3 }}
+                          />
+                          <div className="relative z-10">
+                            <motion.div
+                              animate={{ scale: [1, 1.1, 1] }}
+                              transition={{ duration: 2, repeat: Infinity, repeatDelay: 2 }}
+                            >
+                              <ZoomIn size={16} className="md:w-5 md:h-5" />
+                            </motion.div>
+                          </div>
+                        </motion.button>
                       </div>
                     </div>
                   </div>
@@ -1819,31 +1970,32 @@ export default function StyleBotPage() {
         )}
       </AnimatePresence>
 
-      {/* Full Size Image Modal - Mobile Optimized with Dynamic Height */}
+      {/* Full Size Image Modal - Desktop Only */}
       <AnimatePresence>
         {selectedOutfit && results && results.outfitImages && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/95 z-50 flex items-center justify-center p-0 sm:p-4"
+            className="hidden sm:flex fixed inset-0 bg-black/40 backdrop-blur-sm z-50 items-center justify-center overflow-y-auto"
             onClick={() => {
               setSelectedOutfit(null);
               setSelectedOutfitIndex(null);
             }}
           >
+            {/* Mobile: Bottom Sheet, Desktop: Centered Modal */}
             <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="relative bg-white w-full max-w-full sm:max-w-[90vw] max-h-[95vh] sm:rounded-2xl overflow-hidden shadow-2xl flex flex-col"
+              initial={{ opacity: 0, y: '100%' }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: '100%' }}
+              transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+              className="relative bg-white w-full sm:w-auto sm:max-w-[90vw] max-h-[90vh] sm:max-h-[90vh] rounded-t-3xl sm:rounded-2xl overflow-hidden shadow-2xl flex flex-col my-auto sm:m-4"
               onClick={(e) => e.stopPropagation()}
             >
-              {/* Compact Header */}
-              <div className="flex justify-between items-center px-3 py-2 border-b border-gray-200 bg-gradient-to-r from-purple-50 to-indigo-50 flex-shrink-0">
+              {/* Compact Header - Mobile Optimized */}
+              <div className="flex justify-between items-center px-3 py-2 sm:px-4 sm:py-3 border-b border-gray-200 bg-gradient-to-r from-purple-50 to-indigo-50 flex-shrink-0">
                 <div className="flex items-center gap-2 flex-1 min-w-0">
-                  <h3 className="text-sm font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent truncate">
+                  <h3 className="text-sm sm:text-base font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent truncate">
                     Outfit {selectedOutfitIndex !== null ? selectedOutfitIndex + 1 : ''}
                   </h3>
                   {results.outfitImages.length > 1 && (
@@ -1852,37 +2004,29 @@ export default function StyleBotPage() {
                     </span>
                   )}
                 </div>
-                <div className="flex items-center gap-1 flex-shrink-0">
-                  <button
-                    onClick={() => {
-                      setSelectedOutfit(null);
-                      setSelectedOutfitIndex(null);
-                    }}
-                    className="p-1.5 hover:bg-white rounded-full transition-colors"
-                  >
-                    <X size={18} className="text-gray-600" />
-                  </button>
-                </div>
+                <motion.button
+                  onClick={() => {
+                    setSelectedOutfit(null);
+                    setSelectedOutfitIndex(null);
+                  }}
+                  whileTap={{ scale: 0.9 }}
+                  className="p-1.5 sm:p-2 hover:bg-white rounded-full transition-colors flex-shrink-0"
+                >
+                  <X size={18} className="text-gray-600" />
+                </motion.button>
               </div>
 
-              {/* Image Container */}
+              {/* Image Container - Mobile Optimized */}
               <div 
-                className="relative overflow-hidden bg-gray-900 flex items-center justify-center"
-                style={{ 
-                  height: 'calc(95vh - 100px)',
-                  minHeight: '300px'
-                }}
+                className="relative overflow-y-auto bg-gray-900 flex items-start justify-center"
+                style={{ maxHeight: 'calc(90vh - 140px)' }}
               >
-                <div className="relative w-full h-full">
-                  <Image
-                    src={selectedOutfit || ''}
-                    alt="Full size outfit"
-                    fill
-                    className="object-contain"
-                    sizes="100vw"
-                    unoptimized
-                  />
-                </div>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={selectedOutfit || ''}
+                  alt="Full size outfit"
+                  className="w-full h-auto max-w-full object-contain block"
+                />
 
                 {/* Navigation Arrows */}
                 {results.outfitImages.length > 1 && selectedOutfitIndex !== null && (
@@ -1921,27 +2065,68 @@ export default function StyleBotPage() {
                 )}
               </div>
 
-              {/* Compact Footer */}
-              <div className="flex justify-between items-center gap-2 px-3 py-2 border-t border-gray-200 bg-gradient-to-r from-purple-50 to-indigo-50 flex-shrink-0">
-                <div className="flex items-center gap-1.5 text-xs text-gray-600">
-                  <Sparkles className="w-3 h-3 text-purple-600" />
-                  <span className="hidden sm:inline">AI Generated</span>
+              {/* Compact Footer - Mobile Optimized */}
+              <div className="flex flex-col sm:flex-row justify-between items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-3 border-t border-gray-200 bg-gradient-to-r from-purple-50 to-indigo-50 flex-shrink-0">
+                <div className="hidden sm:flex items-center gap-1.5 text-xs text-gray-600">
+                  <motion.div
+                    animate={{ rotate: [0, 360] }}
+                    transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+                  >
+                    <Sparkles className="w-3 h-3 text-purple-600" />
+                  </motion.div>
+                  <span>AI Generated</span>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2 w-full sm:w-auto">
+                  {/* Save Button - Compact on Mobile */}
                   <motion.button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (selectedOutfit && selectedOutfitIndex !== null) {
+                        saveToStyledLooks(selectedOutfit, selectedOutfitIndex);
+                      }
+                    }}
+                    disabled={selectedOutfit ? (savingOutfitIndex === selectedOutfitIndex || savedOutfits.has(selectedOutfit)) : false}
                     whileTap={{ scale: 0.95 }}
+                    className={`relative flex-1 sm:flex-initial flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-4 py-2 sm:py-2.5 rounded-lg sm:rounded-xl text-xs font-semibold overflow-hidden transition-all ${
+                      selectedOutfit && savedOutfits.has(selectedOutfit)
+                        ? 'bg-pink-100 text-pink-700 border border-pink-300 cursor-not-allowed'
+                        : savingOutfitIndex === selectedOutfitIndex
+                        ? 'bg-gray-100 text-gray-500 cursor-not-allowed'
+                        : 'bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-md'
+                    }`}
+                  >
+                    <div className="relative z-10 flex items-center gap-1.5 sm:gap-2">
+                      {savingOutfitIndex === selectedOutfitIndex ? (
+                        <Loader2 size={14} className="sm:w-4 sm:h-4 animate-spin" />
+                      ) : (
+                        <Heart 
+                          size={14} 
+                          className={`sm:w-4 sm:h-4 ${selectedOutfit && savedOutfits.has(selectedOutfit) ? 'fill-pink-600' : ''}`} 
+                        />
+                      )}
+                      <span className="text-xs whitespace-nowrap">
+                        {savingOutfitIndex === selectedOutfitIndex ? 'Saving...' : selectedOutfit && savedOutfits.has(selectedOutfit) ? 'Saved' : 'Save'}
+                      </span>
+                    </div>
+                  </motion.button>
+
+                  {/* Download Button - Compact on Mobile */}
+                  <motion.button
                     onClick={(e) => {
                       e.stopPropagation();
                       const link = document.createElement("a");
-                      link.href = selectedOutfit;
+                      link.href = selectedOutfit || '';
                       link.download = `outfit-${selectedOutfitIndex !== null ? selectedOutfitIndex + 1 : '1'}.jpg`;
                       link.click();
                     }}
-                    className="flex items-center gap-1.5 bg-gradient-to-r from-purple-500 to-indigo-500 text-white px-3 py-2 rounded-lg text-xs font-semibold"
+                    whileTap={{ scale: 0.95 }}
+                    className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 sm:gap-2 bg-gradient-to-r from-purple-500 to-indigo-500 text-white px-2 sm:px-4 py-2 sm:py-2.5 rounded-lg sm:rounded-xl text-xs font-semibold shadow-md transition-all"
                   >
-                    <Download size={14} />
-                    <span>Download</span>
+                    <Download size={14} className="sm:w-4 sm:h-4" />
+                    <span className="hidden sm:inline whitespace-nowrap">Download</span>
                   </motion.button>
+
+                  {/* Share Button - Compact on Mobile */}
                   <motion.button
                     whileTap={{ scale: 0.95 }}
                     onClick={(e) => {
@@ -1949,17 +2134,17 @@ export default function StyleBotPage() {
                       if (navigator.share) {
                         navigator.share({
                           title: "Check out this outfit recommendation!",
-                          url: selectedOutfit,
+                          url: selectedOutfit || '',
                         });
                       } else {
-                        navigator.clipboard.writeText(selectedOutfit);
+                        navigator.clipboard.writeText(selectedOutfit || '');
                         alert("Image URL copied to clipboard!");
                       }
                     }}
-                    className="flex items-center gap-1.5 bg-white border border-gray-200 text-gray-700 px-3 py-2 rounded-lg text-xs font-semibold"
+                    className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 sm:gap-2 bg-white border border-gray-200 hover:border-pink-300 text-gray-700 px-2 sm:px-4 py-2 sm:py-2.5 rounded-lg sm:rounded-xl text-xs font-semibold shadow-sm transition-all"
                   >
-                    <Share2 size={14} />
-                    <span>Share</span>
+                    <Share2 size={14} className="sm:w-4 sm:h-4" />
+                    <span className="hidden sm:inline whitespace-nowrap">Share</span>
                   </motion.button>
                 </div>
               </div>
