@@ -3,15 +3,27 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
-import TopPicksCard from "@/components/TopPicksCard";
 import Image from "next/image";
 import { supabase } from "@/lib/supabaseClient";
-import { Sparkles, TrendingUp, Calendar, Upload } from "lucide-react";
+import { Sparkles, TrendingUp, Calendar, Upload, Wand2, Shirt, Camera, Heart, ArrowRight, Clock, CloudRain, Palette } from "lucide-react";
+import Link from "next/link";
+
+type StyledLook = {
+  id: string;
+  image_url: string;
+  created_at: string;
+  occasion: string | null;
+  weather: string | null;
+  outfit_style: string | null;
+  color_preference: string | null;
+};
 
 export default function HomePage() {
   const [displayName, setDisplayName] = useState<string>("User");
   const [uploadedItemsCount, setUploadedItemsCount] = useState<number>(0);
   const [isCompact, setIsCompact] = useState<boolean>(false);
+  const [styledLooks, setStyledLooks] = useState<StyledLook[]>([]);
+  const [isLoadingStyledLooks, setIsLoadingStyledLooks] = useState<boolean>(true);
   const today = new Date().toLocaleDateString("en-US", {
     year: "numeric",
     month: "long",
@@ -54,8 +66,68 @@ export default function HomePage() {
       } else {
         setUploadedItemsCount(count || 0);
       }
+
+      // Fetch styled looks
+      fetchStyledLooks();
     })();
   }, []);
+
+  // Fetch styled looks
+  const fetchStyledLooks = async () => {
+    setIsLoadingStyledLooks(true);
+    try {
+      const { data: { user }, error: authErr } = await supabase.auth.getUser();
+      if (authErr || !user) {
+        setIsLoadingStyledLooks(false);
+        return;
+      }
+
+      const { data, error: fetchErr } = await supabase
+        .from("styled_looks")
+        .select("id, image_url, created_at, occasion, weather, outfit_style, color_preference")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(2);
+
+      if (fetchErr) {
+        console.error("Error fetching styled looks:", fetchErr);
+      } else {
+        setStyledLooks(data || []);
+      }
+    } catch (err) {
+      console.error("Error fetching styled looks:", err);
+    } finally {
+      setIsLoadingStyledLooks(false);
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = Math.abs(now.getTime() - date.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) {
+      return "Today";
+    } else if (diffDays === 1) {
+      return "Yesterday";
+    } else if (diffDays < 7) {
+      return `${diffDays} days ago`;
+    } else {
+      return date.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+      });
+    }
+  };
+
+  const formatTagLabel = (value: string | null): string => {
+    if (!value || value === "None") return "";
+    return value
+      .split("_")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
+  };
 
   // Trigger compact mode after 10 seconds
   useEffect(() => {
@@ -385,51 +457,230 @@ export default function HomePage() {
         </div>
       </motion.div>
 
-      {/* Top Picks Section */}
-      <motion.div variants={itemVariants}>
+      {/* Quick Actions & Styled Looks Section */}
+      <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Left Column - Quick Actions */}
         <motion.div
-          className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6"
+          className="space-y-4"
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.5 }}
+          transition={{ delay: 0.3 }}
         >
-          <div className="w-1 h-6 sm:h-8 bg-gradient-to-b from-purple-500 to-indigo-600 rounded-full" />
-          <h2 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
-            Top Picks For You Today!
-          </h2>
-          <motion.div
-            animate={{ 
-              scale: [1, 1.2, 1],
-              rotate: [0, 180, 360]
-            }}
-            transition={{ 
-              duration: 3, 
-              repeat: Infinity, 
-              ease: "easeInOut" 
-            }}
-          >
-            <Sparkles size={16} className="text-yellow-500 sm:w-5 sm:h-5" />
-          </motion.div>
+          <div className="flex items-center gap-2 mb-4">
+            <div className="w-1 h-6 bg-gradient-to-b from-purple-500 to-indigo-600 rounded-full" />
+            <h2 className="text-xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
+              Quick Actions
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            {/* Generate Outfit Button */}
+            <motion.div
+              whileHover={{ scale: 1.05, y: -5 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <Link href="/style_bot">
+                <div className="relative bg-gradient-to-br from-purple-500 via-indigo-500 to-purple-600 rounded-2xl p-6 text-white shadow-xl shadow-purple-500/25 cursor-pointer overflow-hidden group">
+                  <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full blur-xl group-hover:bg-white/20 transition-all" />
+                  <motion.div
+                    animate={{ rotate: [0, 360] }}
+                    transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+                    className="absolute top-2 right-2"
+                  >
+                    <Sparkles size={20} className="text-yellow-300" />
+                  </motion.div>
+                  <Wand2 size={32} className="mb-3 relative z-10" />
+                  <h3 className="font-bold text-lg mb-1 relative z-10">Generate</h3>
+                  <p className="text-sm text-purple-100 relative z-10">AI Outfit</p>
+                </div>
+              </Link>
+            </motion.div>
+
+            {/* Virtual Try-On Button */}
+            <motion.div
+              whileHover={{ scale: 1.05, y: -5 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <Link href="/virtual_tryon">
+                <div className="relative bg-gradient-to-br from-pink-500 via-rose-500 to-pink-600 rounded-2xl p-6 text-white shadow-xl shadow-pink-500/25 cursor-pointer overflow-hidden group">
+                  <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full blur-xl group-hover:bg-white/20 transition-all" />
+                  <Camera size={32} className="mb-3 relative z-10" />
+                  <h3 className="font-bold text-lg mb-1 relative z-10">Virtual</h3>
+                  <p className="text-sm text-pink-100 relative z-10">Try-On</p>
+                </div>
+              </Link>
+            </motion.div>
+
+            {/* Upload Wardrobe Button */}
+            <motion.div
+              whileHover={{ scale: 1.05, y: -5 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <Link href="/upload_wardrobe">
+                <div className="relative bg-gradient-to-br from-blue-500 via-cyan-500 to-blue-600 rounded-2xl p-6 text-white shadow-xl shadow-blue-500/25 cursor-pointer overflow-hidden group">
+                  <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full blur-xl group-hover:bg-white/20 transition-all" />
+                  <Upload size={32} className="mb-3 relative z-10" />
+                  <h3 className="font-bold text-lg mb-1 relative z-10">Upload</h3>
+                  <p className="text-sm text-blue-100 relative z-10">Wardrobe</p>
+                </div>
+              </Link>
+            </motion.div>
+
+            {/* Closet Manager Button */}
+            <motion.div
+              whileHover={{ scale: 1.05, y: -5 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <Link href="/closet_manager">
+                <div className="relative bg-gradient-to-br from-emerald-500 via-teal-500 to-emerald-600 rounded-2xl p-6 text-white shadow-xl shadow-emerald-500/25 cursor-pointer overflow-hidden group">
+                  <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full blur-xl group-hover:bg-white/20 transition-all" />
+                  <Shirt size={32} className="mb-3 relative z-10" />
+                  <h3 className="font-bold text-lg mb-1 relative z-10">Closet</h3>
+                  <p className="text-sm text-emerald-100 relative z-10">Manager</p>
+                </div>
+              </Link>
+            </motion.div>
+          </div>
         </motion.div>
-        
-        <motion.div 
-          className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6"
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
+
+        {/* Right Column - Styled Looks History */}
+        <motion.div
+          className="space-y-4"
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.4 }}
         >
-          <motion.div variants={itemVariants}>
-            <TopPicksCard image="/dashboard_img/loading.png" title="Sunny Escape" />
-          </motion.div>
-          <motion.div variants={itemVariants}>
-            <TopPicksCard image="/dashboard_img/loading.png" title="City Slick" />
-          </motion.div>
-          <motion.div variants={itemVariants}>
-            <TopPicksCard image="/dashboard_img/loading.png" title="Neutral Charm" />
-          </motion.div>
-          <motion.div variants={itemVariants}>
-            <TopPicksCard image="/dashboard_img/loading.png" title="Pop of Pattern" />
-          </motion.div>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <div className="w-1 h-6 bg-gradient-to-b from-pink-500 to-rose-600 rounded-full" />
+              <h2 className="text-xl font-bold bg-gradient-to-r from-pink-600 to-rose-600 bg-clip-text text-transparent">
+                Recent Styled Looks
+              </h2>
+            </div>
+            {styledLooks.length > 0 && (
+              <Link href="/styled_looks">
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="flex items-center gap-1 text-sm text-pink-600 hover:text-pink-700 font-medium"
+                >
+                  View All
+                  <ArrowRight size={16} />
+                </motion.button>
+              </Link>
+            )}
+          </div>
+
+          {isLoadingStyledLooks ? (
+            <div className="space-y-4">
+              {Array.from({ length: 2 }).map((_, index) => (
+                <div key={index} className="bg-white rounded-xl p-4 border border-gray-200">
+                  <div className="flex gap-4">
+                    <div className="w-20 h-20 bg-gray-200 rounded-lg animate-pulse" />
+                    <div className="flex-1 space-y-2">
+                      <div className="h-4 bg-gray-200 rounded animate-pulse w-1/3" />
+                      <div className="h-3 bg-gray-200 rounded animate-pulse w-2/3" />
+                      <div className="h-3 bg-gray-200 rounded animate-pulse w-1/2" />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : styledLooks.length === 0 ? (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-white rounded-2xl p-8 text-center border border-gray-200"
+            >
+              <Heart className="w-12 h-12 mx-auto mb-3 text-pink-300" />
+              <h3 className="font-bold text-gray-800 mb-2">No Styled Looks Yet</h3>
+              <p className="text-sm text-gray-500 mb-4">
+                Start saving your favorite outfits from Style Bot!
+              </p>
+              <Link href="/style_bot">
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="bg-gradient-to-r from-pink-500 to-rose-500 text-white px-6 py-2 rounded-lg font-semibold text-sm"
+                >
+                  Generate Outfits
+                </motion.button>
+              </Link>
+            </motion.div>
+          ) : (
+            <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2">
+              {styledLooks.map((look, index) => (
+                <motion.div
+                  key={look.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                  whileHover={{ scale: 1.02, y: -2 }}
+                  className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm hover:shadow-md transition-all cursor-pointer group"
+                  onClick={() => window.location.href = '/styled_looks'}
+                >
+                  <div className="flex gap-4">
+                    {/* Image */}
+                    <div className="relative w-20 h-20 flex-shrink-0 rounded-lg overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={look.image_url}
+                        alt="Styled look"
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                      />
+                    </div>
+
+                    {/* Details */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Clock size={12} className="text-gray-400 flex-shrink-0" />
+                        <span className="text-xs text-gray-500 font-medium">
+                          {formatDate(look.created_at)}
+                        </span>
+                      </div>
+
+                      {/* Tags */}
+                      <div className="flex flex-wrap gap-1.5">
+                        {look.occasion && (
+                          <div className="flex items-center gap-1 bg-pink-50 text-pink-700 px-2 py-0.5 rounded-md text-xs">
+                            <Calendar size={10} />
+                            <span>{formatTagLabel(look.occasion)}</span>
+                          </div>
+                        )}
+                        {look.weather && (
+                          <div className="flex items-center gap-1 bg-blue-50 text-blue-700 px-2 py-0.5 rounded-md text-xs">
+                            <CloudRain size={10} />
+                            <span>{formatTagLabel(look.weather)}</span>
+                          </div>
+                        )}
+                        {look.outfit_style && (
+                          <div className="flex items-center gap-1 bg-purple-50 text-purple-700 px-2 py-0.5 rounded-md text-xs">
+                            <Sparkles size={10} />
+                            <span>{formatTagLabel(look.outfit_style)}</span>
+                          </div>
+                        )}
+                        {look.color_preference && (
+                          <div className="flex items-center gap-1 bg-rose-50 text-rose-700 px-2 py-0.5 rounded-md text-xs">
+                            <Palette size={10} />
+                            <span>{formatTagLabel(look.color_preference)}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Arrow Icon */}
+                    <motion.div
+                      initial={{ x: 0 }}
+                      whileHover={{ x: 5 }}
+                      className="flex items-center text-gray-400 group-hover:text-pink-600 transition-colors"
+                    >
+                      <ArrowRight size={16} />
+                    </motion.div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
         </motion.div>
       </motion.div>
     </motion.div>
